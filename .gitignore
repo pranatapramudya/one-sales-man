@@ -38,3 +38,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# whatsapp-web.js session & cache
+.wwebjs_auth/
+.wwebjs_cache/
+*.png
+*.html
+

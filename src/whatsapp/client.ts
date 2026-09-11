@@ -1,3 +1,4 @@
+import path from 'path';
 import 'dotenv/config';
 import { Client, LocalAuth, MessageMedia } from 'whatsapp-web.js';
 import qrcode from 'qrcode-terminal';
@@ -9,17 +10,36 @@ const groq = new Groq({
     apiKey: process.env.LLM_API_KEY,
 });
 
+const sessionDir = path.resolve(__dirname, '../../.wwebjs_auth');
+
 // Initialize the WhatsApp Client
 export const whatsappClient = new Client({
-    authStrategy: new LocalAuth(), // Saves session locally
+    authStrategy: new LocalAuth({
+        dataPath: sessionDir
+    }),
+    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
+    webVersionCache: {
+        type: 'local',
+    },
     puppeteer: {
-        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+        headless: true,
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--no-first-run',
+            '--no-zygote',
+            '--disable-gpu',
+            '--disable-blink-features=AutomationControlled'
+        ],
     }
 });
 
 whatsappClient.on('qr', (qr) => {
     console.log('QR Code Received. Scan it with your WhatsApp:');
     qrcode.generate(qr, { small: true });
+    console.log(`[WA_QR] ${qr}`);
 });
 
 whatsappClient.on('ready', () => {
@@ -40,7 +60,7 @@ whatsappClient.on('message', async (msg) => {
     try {
         // Normalisasi nomor pengirim dari "628xxx@c.us" menjadi "+628xxx"
         const senderNumber = '+' + msg.from.replace('@c.us', '');
-        
+
         // Cari status prospek di database
         const prospect = await prisma.prospect.findUnique({
             where: { whatsappNumber: senderNumber }
@@ -54,13 +74,22 @@ whatsappClient.on('message', async (msg) => {
         console.log(`\n[AI Negotiator] Memproses pesan dari ${prospect.businessName} (${senderNumber})`);
         console.log(`[User] : ${msg.body}`);
 
-        const systemPrompt = `Anda adalah representatif Customer Service & Sales dari sebuah IT Agency lokal. Anda ramah, santai, dan sangat profesional.
-Tugas Anda adalah membalas pesan dari pemilik UMKM (seperti bengkel, coffee shop, klinik, retail) yang merespons penawaran kita.
-Gunakan bahasa Indonesia yang rapi namun terkesan natural dan santai (sapa mereka dengan "Kak", "Mas", "Pak", atau "Bu").
+        const systemPrompt = `Anda adalah representatif sales dari PJTECH. Saat merespons klien, gunakan gaya bahasa yang ramah, santai, sopan, namun profesional khas WhatsApp. Lakukan diagnosa masalah mereka terlebih dahulu.
 
-Model Bisnis Kita (Hybrid):
-1. Tier 1 (Utama): Tawarkan pembuatan aplikasi kasir / website custom (jual putus / instalasi sekali bayar). Edukasi mereka soal efisiensi.
-2. Tier 2 (Fallback): Jika klien keberatan dengan biaya modal di awal (CAPEX) untuk jasa custom, JANGAN gunakan istilah teknis seperti 'SaaS' atau menyebut nama produk. Sebagai gantinya, tawarkan solusi: 'Sewa langganan aplikasi bulanan yang fiturnya bisa disesuaikan dengan kebutuhan bisnis Kakak'. Jelaskan dengan bahasa santai bahwa opsi sewa ini jauh lebih ringan karena tinggal pakai dan bayar per bulan.
+KITA MEMILIKI DUA SOLUSI UTAMA TERGANTUNG KEBUTUHAN KLIEN:
+
+1. SOLUSI SAAS KASIR UMKM SIAP PAKAI (https://pjtechumkm.com):
+Cocok untuk operasional F&B (kafe/resto), Retail (toko/kelontong), Jasa (salon/barbershop/bengkel), dan Rental (mobil/kos).
+Pilihan Paket Langganan di pjtechumkm.com:
+- Free Trial 14 Hari (Rp 0): Coba gratis seluruh fitur kasir POS tanpa risiko dan tanpa biaya apa pun.
+- Pro 1 Bulan: Rp 129.000 / bulan (untuk mencoba fitur lengkap kasir pintar & manajemen stok).
+- Pro 6 Bulan: Rp 99.000 / bulan (Total: Rp 594.000 / 6 bulan).
+- Pro 1 Tahun (Paling Hemat): Rp 82.500 / bulan (Total: Rp 990.000 / tahun - Hemat Rp 558.000!).
+Tawarkan link resmi https://pjtechumkm.com jika mereka ingin mencoba Free Trial 14 Hari atau melihat demo sistemnya.
+
+2. SOLUSI CUSTOM APPS & WEB DEVELOPMENT (https://www.pranajayatech.online/):
+Jika ${prospect.businessName} memiliki kebutuhan sistem yang unik/kompleks (misal: sistem rekam medis & antrean klinik dokter, sistem barcode membership & absensi gym, integrasi kalender rental kendaraan dengan GPS, atau website profil bisnis eksklusif), sampaikan bahwa PJTECH Agency siap membuatkan sistem atau website kustom sesuai kebutuhan mereka.
+Arahkan mereka untuk melihat portofolio di: https://www.pranajayatech.online/
 
 ATURAN HANDOFF SANGAT PENTING:
 Jika klien menunjukkan intensi berikut:
@@ -128,7 +157,7 @@ export async function sendColdMessage(number: string, text: string, mediaPath?: 
         // Random delay between 5s and 15s
         const delay = Math.floor(Math.random() * 10000) + 5000;
         console.log(`Waiting ${delay / 1000} seconds before sending cold message to ${formattedNumber}...`);
-        
+
         await new Promise(resolve => setTimeout(resolve, delay));
 
         if (mediaPath) {

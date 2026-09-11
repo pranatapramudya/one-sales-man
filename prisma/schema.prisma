@@ -14,18 +14,19 @@ enum LeadStatus {
 }
 
 model Prospect {
-  id              String     @id @default(uuid())
+  id              String          @id @default(uuid())
   businessName    String
   category        String?
   city            String?
-  whatsappNumber  String     @unique
+  whatsappNumber  String          @unique
   rating          Float?
-  status          LeadStatus @default(PENDING)
-  scrapedAt       DateTime   @default(now())
+  status          LeadStatus      @default(PENDING)
+  scrapedAt       DateTime        @default(now())
   lastContactedAt DateTime?
-  notes           String?    @db.Text
+  notes           String?         @db.Text
 
   messages        OutreachMessage[]
+  supportTickets  SupportTicket[]
 }
 
 model OutreachMessage {
@@ -34,4 +35,37 @@ model OutreachMessage {
   prospect    Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
   messageText String   @db.Text
   sentAt      DateTime @default(now())
+}
+
+enum InquiryCategory {
+  PRICING_INFO
+  FEATURE_HOWTO
+  PRINTER_SETUP
+  BUG_REPORT
+  PAYMENT_CONFIRMATION
+  COMPLEX_CUSTOM
+}
+
+enum TicketStatus {
+  RESOLVED_BY_AI
+  ESCALATED_TO_HUMAN
+  WAITING_CLIENT
+  CLOSED
+}
+
+model SupportTicket {
+  id              String          @id @default(uuid())
+  prospectId      String?
+  prospect        Prospect?       @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  senderPhone     String
+  category        InquiryCategory @default(FEATURE_HOWTO)
+  status          TicketStatus    @default(RESOLVED_BY_AI)
+  userQuery       String          @db.Text
+  aiDraftAnswer   String?         @db.Text
+  escalatedReason String?
+  createdAt       DateTime        @default(now())
+  resolvedAt      DateTime?
+
+  @@index([status])
+  @@index([createdAt])
 }

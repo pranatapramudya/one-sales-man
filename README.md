@@ -61,6 +61,6 @@ Berikut adalah bagaimana robot "One Salesman" bekerja dari awal hingga akhir:
 3. **Outreach & Blaster:** 
    Bot WhatsApp akan mengirimkan pesan sapaan awal yang sopan (Anti-Gatekeeper) kepada prospek `PENDING` dengan waktu tunda (delay) acak agar tidak terkena ban. Status prospek lalu berubah menjadi `CONTACTED`.
 4. **AI Negotiator Beraksi:** 
-   Jika prospek merespons, **Groq AI (Llama 3)** akan bertindak sebagai Sales Representative untuk menjawab pertanyaan, mengedukasi klien, dan menawarkan solusi (termasuk tawaran sistem sewa berlangganan jika klien keberatan dengan harga custom).
+   Jika prospek merespons, **Groq AI (Llama 3)** akan bertindak sebagai Sales Representative dari PJTECH untuk melakukan diagnosa masalah, menjawab pertanyaan, dan menawarkan solusi spesifik (SaaS Kasir UMKM atau Jasa Pembuatan Custom Apps/Website sesuai kebutuhan klien).
 5. **Human Handoff:** 
    Ketika AI mendeteksi intensi ketertarikan kuat dari klien (misal minta meeting, harga detail, atau setuju), AI akan menyerahkan percakapan kepada tenaga manusia (Technical Lead) dan mengubah status prospek menjadi `HOT_LEAD`.

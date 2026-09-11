@@ -23,13 +23,9 @@ async function runOutreachPipeline() {
     // Step 2: Iterate and send messages
     for (const prospect of pendingProspects) {
         // Construct the cold outreach message
-        const messageTemplate = `Halo Kak, salam kenal. Maaf mengganggu waktunya sebentar ya 🙏
+        const messageTemplate = `Halo admin ${prospect.businessName}, salam kenal! Saya Pranata dari tim PJTECH.
 
-        Saya Pranata, software engineer lokal Sumedang. Saya lihat ulasan *${prospect.businessName}* di Google bagus-bagus banget.
-
-        Kebetulan saya dan tim lagi fokus ngebantu UMKM sekitar sini buat ngebangun sistem kasir otomatis dan website. Tujuannya biar pencatatan nggak manual dan staff nggak pusing rekap data pas tutup shift. 
-
-        Kira-kira apakah saya bisa minta tolong dibantu teruskan pesan ini ke Owner / Manager yang bertugas Kak? Atau boleh dijadwalkan ngobrol santai dengan beliau? Terima kasih banyak Kak!`;
+Maaf mengganggu waktunya kak. Kebetulan kita lagi ada program riset untuk digitalisasi UMKM/Bisnis lokal. Boleh izin tanya sedikit mengenai operasional pencatatan di ${prospect.businessName} kak?`;
 
         // Send the message using our random-delay sender
         const success = await sendColdMessage(prospect.whatsappNumber, messageTemplate);

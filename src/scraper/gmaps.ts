@@ -17,13 +17,13 @@ function formatPhoneNumber(phone: string): string | null {
     return '+' + cleaned;
 }
 
-export async function scrapeGoogleMaps(keyword: string, limit: number = 10) {
+export async function scrapeGoogleMaps(keyword: string, limit: number = 10, headless: boolean = false) {
     const keywordParts = keyword.trim().split(' ');
     const extractedCity = keywordParts.length > 1 ? keywordParts[keywordParts.length - 1] : null;
     console.log(`Starting Google Maps Scraper for keyword: "${keyword}" (Assumed City: ${extractedCity})`);
     
     // 1. NAVIGASI: Buka browser dengan headless: false agar terlihat
-    const browser = await chromium.launch({ headless: false });
+    const browser = await chromium.launch({ headless: headless });
     const context = await browser.newContext({
         locale: 'id-ID', // Membantu mendapatkan UI Bahasa Indonesia secara konsisten
     });
