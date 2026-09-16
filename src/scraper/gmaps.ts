@@ -14,12 +14,15 @@ function formatPhoneNumber(phone: string): string | null {
     }
     
     if (cleaned.length < 10) return null; // Invalid length
+    // Hanya nomor HP seluler Indonesia (08... / 628...) yang mendukung WhatsApp
+    if (!cleaned.startsWith('628')) return null;
     return '+' + cleaned;
 }
 
 export async function scrapeGoogleMaps(keyword: string, limit: number = 10, headless: boolean = false) {
     const keywordParts = keyword.trim().split(' ');
-    const extractedCity = keywordParts.length > 1 ? keywordParts[keywordParts.length - 1] : null;
+    const rawCity = keywordParts.length > 1 ? keywordParts[keywordParts.length - 1] : null;
+    const extractedCity = rawCity ? rawCity.charAt(0).toUpperCase() + rawCity.slice(1).toLowerCase() : 'Sumedang';
     console.log(`Starting Google Maps Scraper for keyword: "${keyword}" (Assumed City: ${extractedCity})`);
     
     // 1. NAVIGASI: Buka browser dengan headless: false agar terlihat
@@ -30,33 +33,27 @@ export async function scrapeGoogleMaps(keyword: string, limit: number = 10, head
     const page = await context.newPage();
     
     try {
-        console.log('Navigating to Google Maps...');
-        // Menggunakan waitUntil domcontentloaded agar tidak timeout jika map tile lambat load
-        await page.goto('https://www.google.com/maps', { waitUntil: 'domcontentloaded', timeout: 60000 });
-        
-        // 2. PENCARIAN OTOMATIS
-        console.log('Waiting for search box...');
-        const searchBoxSelector = 'input[name="q"], #searchboxinput';
-        await page.waitForSelector(searchBoxSelector, { timeout: 30000 });
-        await page.fill(searchBoxSelector, keyword);
-        await page.press(searchBoxSelector, 'Enter');
+        console.log(`Navigating to Google Maps search for: "${keyword}"...`);
+        await page.goto('https://www.google.com/maps/search/' + encodeURIComponent(keyword), { 
+            waitUntil: 'domcontentloaded', 
+            timeout: 60000 
+        });
         
         // 3. TUNGGU HASIL
         console.log('Waiting for results to load...');
-        // Menunggu sampai elemen hasil pencarian muncul (minimal satu)
-        await page.waitForSelector('a[href*="/maps/place/"]', { timeout: 30000 });
-        await page.waitForTimeout(3000); // Tunggu sebentar agar panel hasil stabil
+        await page.waitForSelector('div[role="feed"], a.hfpxzc, a.hfpxzc, a[href*="/maps/place/"]', { timeout: 30000 });
+        await page.waitForTimeout(2500);
         
         console.log('Results loaded, starting extraction...');
         let count = 0;
         
         // 4. EKSTRAKSI & LOOPING
-        let cards = page.locator('a[href*="/maps/place/"]');
+        let cards = page.locator('a.hfpxzc, a[href*="/maps/place/"]');
         let elementsCount = await cards.count();
         
         for (let i = 0; i < limit; i++) {
             // Ambil ulang locator karena DOM bisa berubah saat scroll
-            cards = page.locator('a[href*="/maps/place/"]');
+            cards = page.locator('a.hfpxzc, a[href*="/maps/place/"]');
             elementsCount = await cards.count();
             
             if (i >= elementsCount) {
@@ -67,7 +64,7 @@ export async function scrapeGoogleMaps(keyword: string, limit: number = 10, head
                     await page.mouse.wheel(0, 1500);
                     await page.waitForTimeout(2000);
                     
-                    cards = page.locator('a[href*="/maps/place/"]');
+                    cards = page.locator('a.hfpxzc, a[href*="/maps/place/"]');
                     elementsCount = await cards.count();
                     
                     if (i >= elementsCount) {

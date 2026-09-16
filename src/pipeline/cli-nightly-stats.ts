@@ -9,20 +9,28 @@ async function main() {
     const [
       newProspectsToday,
       contactedToday,
+      contactedTotal,
       hotLeadsCount,
+      closedCount,
       totalDatabase,
       totalTicketsToday,
       resolvedTicketsToday,
       escalatedTicketsToday
     ] = await Promise.all([
       prisma.prospect.count({
-        where: { createdAt: { gte: startOfDay } }
+        where: { scrapedAt: { gte: startOfDay } }
       }).catch(() => 0),
       prisma.prospect.count({
         where: { lastContactedAt: { gte: startOfDay } }
       }).catch(() => 0),
       prisma.prospect.count({
+        where: { status: { in: ['CONTACTED', 'HOT_LEAD', 'CLOSED'] } }
+      }).catch(() => 0),
+      prisma.prospect.count({
         where: { status: 'HOT_LEAD' }
+      }).catch(() => 0),
+      prisma.prospect.count({
+        where: { status: 'CLOSED' }
       }).catch(() => 0),
       prisma.prospect.count().catch(() => 0),
       prisma.supportTicket.count({
@@ -30,7 +38,7 @@ async function main() {
       }).catch(() => 0),
       prisma.supportTicket.count({
         where: {
-          status: 'RESOLVED',
+          status: 'RESOLVED_BY_AI',
           createdAt: { gte: startOfDay }
         }
       }).catch(() => 0),
@@ -41,6 +49,21 @@ async function main() {
         }
       }).catch(() => 0)
     ]);
+
+    // Hitung berapa prospek yang sudah pernah membalas chat
+    const repliedRows = await prisma.outreachMessage.findMany({
+      where: { messageText: { startsWith: '[User]:' } },
+      select: { prospectId: true },
+      distinct: ['prospectId']
+    }).catch(() => []);
+    const repliedCount = repliedRows.length;
+
+    // Hitung Persentase Konversi Nyata (Conversion Funnel)
+    const baseContacted = Math.max(contactedTotal, 1);
+    const responseRate = contactedTotal > 0 ? parseFloat(((repliedCount / baseContacted) * 100).toFixed(1)) : 0;
+    const leadRate = contactedTotal > 0 ? parseFloat(((hotLeadsCount / baseContacted) * 100).toFixed(1)) : 0;
+    const closingRate = contactedTotal > 0 ? parseFloat(((closedCount / baseContacted) * 100).toFixed(1)) : 0;
+    const pipelineEstimate = hotLeadsCount * 990000;
 
     const recentHotLeads = await prisma.prospect.findMany({
       where: { status: 'HOT_LEAD' },
@@ -58,7 +81,14 @@ async function main() {
       sales: {
         newProspectsToday,
         contactedToday,
+        contactedTotal,
+        repliedCount,
         hotLeadsCount,
+        closedCount,
+        responseRate,
+        leadRate,
+        closingRate,
+        pipelineEstimate,
         totalDatabase,
         recentHotLeads
       },
@@ -68,7 +98,7 @@ async function main() {
         escalatedTicketsToday
       }
     }));
-  } catch (err) {
+  } catch (err: any) {
     console.error(JSON.stringify({ success: false, error: err?.message || String(err) }));
   } finally {
     await prisma.$disconnect();
