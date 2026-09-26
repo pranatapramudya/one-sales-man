@@ -19,6 +19,8 @@ model Prospect {
   category        String?
   city            String?
   whatsappNumber  String          @unique
+  email           String?         @unique
+  emailSource     String?         // 'maps', 'website', 'instagram', 'facebook', 'manual'
   rating          Float?
   status          LeadStatus      @default(PENDING)
   scrapedAt       DateTime        @default(now())
@@ -68,4 +70,20 @@ model SupportTicket {
 
   @@index([status])
   @@index([createdAt])
+}
+
+model ScrapingState {
+  id                String   @id @default(uuid())
+  currentWave       Int      @default(1)
+  currentVerticalIndex Int   @default(0)
+  currentCityIndex  Int      @default(0)
+  lastRunAt         DateTime?
+  totalScraped      Int      @default(0)
+  totalEmailsFound  Int      @default(0)
+  isRunning         Boolean  @default(false)
+  lastError         String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([currentWave, currentVerticalIndex, currentCityIndex])
 }

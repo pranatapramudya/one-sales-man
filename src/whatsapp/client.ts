@@ -96,12 +96,17 @@ async function notifyTelegram(text: string) {
     }
 }
 
-// AI NEGOTIATOR LOGIC
-const HANDOFF_TEXT = "Baik Kak, untuk detail teknis dan penawaran khusus akan langsung dibantu oleh Mas Pranata (Technical Lead kami). Sebentar ya Kak, saya teruskan ke beliau.";
+// ── AI CHAT NONAKTIF (DIMATIKAN) ─────────────────────────────────────────────
+// Cold outreach = 1x saja. Tidak ada auto-reply apapun.
+// Kalau ada balasan masuk → notif Telegram ke Mas Pranata untuk follow up manual.
 
 whatsappClient.on('message', async (msg) => {
     // Abaikan pesan dari grup, status broadcast, atau pesan dari bot sendiri
     if (msg.from.includes('@g.us') || msg.from === 'status@broadcast' || msg.fromMe) return;
+
+    // whatsapp-web.js kadang memancarkan event kosong saat pesan outbound tersinkron
+    // pada perangkat lain. Itu bukan balasan prospek dan tidak perlu diteruskan.
+    if (!msg.body?.trim()) return;
 
     try {
         // Normalisasi nomor pengirim dari "628xxx@c.us"
@@ -109,7 +114,7 @@ whatsappClient.on('message', async (msg) => {
         const senderNumber = '+' + rawDigits;
         const localFormat = rawDigits.startsWith('62') ? '0' + rawDigits.slice(2) : rawDigits;
 
-        // Cari prospek di database (toleran berbagai format nomor)
+        // Cari prospek di database
         const prospect = await prisma.prospect.findFirst({
             where: {
                 OR: [
@@ -121,123 +126,22 @@ whatsappClient.on('message', async (msg) => {
             }
         });
 
-        const bizName = prospect?.businessName || 'Kak';
+        const bizName = prospect?.businessName || 'Unknown';
 
-        // RULES: Jika status sudah HOT_LEAD atau CLOSED, jangan ditimpa AI agar Mas Pranata bisa handle manual
-        if (prospect && (prospect.status === 'HOT_LEAD' || prospect.status === 'CLOSED')) {
-            console.log(`[AI Negotiator] Pesan dari ${bizName} (${senderNumber}) diabaikan karena status sudah ${prospect.status} (dihandle langsung Mas Pranata).`);
-            return;
-        }
+        // LOG SAJA — tidak ada balasan apapun ke WA
+        console.log(`[WA INCOMING] ⛔ AI NONAKTIF. Pesan dari ${bizName} (${senderNumber}): "${msg.body?.slice(0, 80)}"`);
 
-        console.log(`\n🤖 [AI Negotiator] Memproses pesan masuk dari ${bizName} (${senderNumber})`);
-        console.log(`[User] : ${msg.body}`);
-
-        const systemPrompt = `Anda adalah "Pranata / Tim Sales PJTech", asisten konsultan bisnis digital UMKM dari PJTECH.
-Saat merespons klien di WhatsApp, gunakan gaya bahasa yang ramah, sopan, santai, dan solutif (khas chat bisnis WhatsApp Indonesia, bukan robot kaku).
-
-PRODUK UTAMA KITA:
-1. "PJTech Kasir UMKM" (https://pjtechumkm.com):
-- Solusi kasir POS cloud multi-usaha (F&B kafe/resto, Toko retail/sembako, Jasa barbershop/salon/bengkel, dan Rental kendaraan/kos).
-- Fitur: Cek stok HP, scan barcode kamera, cetak struk bluetooth, rekap omzet harian otomatis, hitung komisi karyawan.
-- Harga: Coba GRATIS 14 Hari (Rp 0). Paket Pro 1 Tahun cuma Rp 82.500/bulan (Total Rp 990.000/tahun — cuma setara Rp 2.700/hari!).
-- Arahkan ke link coba gratis: https://pjtechumkm.com
-
-2. "PJTech Custom Apps & Web" (https://pranajayatech.online/):
-- Jika ${bizName} butuh sistem khusus (antrean pasien klinik, absensi membership gym, kalender rental GPS, website custom).
-- Portofolio: https://pranajayatech.online/
-
-ATURAN HANDOFF (SANGAT PENTING):
-Jika calon klien menunjukkan minat beli, meminta nomor rekening, menanyakan rincian harga mendalam, ingin jadwal meeting, atau tanya teknis spesifik, Anda WAJIB membalas dengan kalimat persis:
-"${HANDOFF_TEXT}"
-Jangan tambahkan kata lain jika handoff terpicu!`;
-
-        // Panggil LLM: Coba Groq Qwen lebih dulu, jika gagal fallback ke Gemini Flash
-        let aiResponse = '';
-        if (groqApiKey) {
-            try {
-                const chatCompletion = await groq.chat.completions.create({
-                    messages: [
-                        { role: 'system', content: systemPrompt },
-                        { role: 'user', content: msg.body }
-                    ],
-                    model: 'qwen/qwen3.8-27b',
-                    temperature: 0.6,
-                    max_tokens: 500
-                });
-                aiResponse = chatCompletion.choices[0]?.message?.content?.trim() || '';
-            } catch (groqErr: any) {
-                console.warn('[AI Negotiator] Groq model error, mencoba fallback ke Gemini Flash:', groqErr?.message);
-            }
-        }
-
-        if (!aiResponse && process.env.GEMINI_API_KEY) {
-            try {
-                const { GoogleGenerativeAI } = await import('@google/generative-ai');
-                const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-                const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-                const geminiRes = await model.generateContent(`${systemPrompt}\n\nPesan Klien: "${msg.body}"\nBalasan Anda:`);
-                aiResponse = geminiRes.response.text().trim();
-            } catch (geminiErr: any) {
-                console.error('[AI Negotiator] Gemini fallback error:', geminiErr?.message);
-            }
-        }
-
-        if (!aiResponse) {
-            aiResponse = `Halo Kak! Terima kasih sudah menghubungi tim PJTech. Untuk kebutuhan operasional kasir atau pembuatan sistem di ${bizName}, ada yang bisa kami bantu kak? Kakak juga bisa langsung coba gratis 14 hari di https://pjtechumkm.com ya kak 😊`;
-        }
-
-        // Random delay sebelum membalas (Anti-ban: 5s hingga 10s)
-        const delay = Math.floor(Math.random() * 5000) + 5000;
-        console.log(`[AI Negotiator] Menunggu ${delay / 1000} detik sebelum membalas ke ${bizName}...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-
-        // Balas pesan via WhatsApp
-        await msg.reply(aiResponse);
-        console.log(`[AI Balasan] : ${aiResponse}`);
-
-        // Cek jika AI merespons dengan Handoff Trigger
-        const isHandoff = aiResponse.includes("dibantu oleh Mas Pranata") || aiResponse.includes("saya teruskan");
-        if (isHandoff) {
-            console.log(`[🔥 HANDOFF] Trigger terdeteksi! Mengubah status ${bizName} menjadi HOT_LEAD.`);
-            if (prospect) {
-                await prisma.prospect.update({
-                    where: { id: prospect.id },
-                    data: { status: 'HOT_LEAD', lastContactedAt: new Date() }
-                });
-            }
-
-            // Notifikasi Real-time ke Telegram Owner
-            await notifyTelegram(
-                `🔥 *[HOT LEAD WHATSAPP TERDETEKSI!]*\n\n` +
-                `👤 *Bisnis:* ${bizName}\n` +
-                `📱 *WhatsApp:* \`${senderNumber}\`\n` +
-                `💬 *Pesan Klien:* "${msg.body}"\n` +
-                `🤖 *Balasan AI:* "${aiResponse}"\n\n` +
-                `⚡ *Segera follow up & closing deal!*\n` +
-                `👉 [Buka Chat WhatsApp](https://wa.me/${rawDigits})`
-            );
-        } else {
-            // Notifikasi info chat masuk ke Telegram (hanya log informatif)
-            await notifyTelegram(
-                `💬 *[WHATSAPP CHAT DARI KLIEN]*\n\n` +
-                `👤 *Bisnis:* ${bizName} (\`${senderNumber}\`)\n` +
-                `📥 *Pesan:* "${msg.body}"\n` +
-                `🤖 *AI Menjawab:* "${aiResponse}"`
-            ).catch(() => {});
-        }
-
-        // Catat percakapan ke database jika prospek ada
-        if (prospect) {
-            await prisma.outreachMessage.create({
-                data: {
-                    prospectId: prospect.id,
-                    messageText: `[User]: ${msg.body}\n[AI]: ${aiResponse}`
-                }
-            }).catch(() => {});
-        }
+        // Notif Telegram ke Mas Pranata untuk follow up manual
+        await notifyTelegram(
+            `📩 *[BALASAN WA MASUK — FOLLOW UP MANUAL]*\n\n` +
+            `👤 *Bisnis:* ${bizName} (\`${senderNumber}\`)\n` +
+            `📥 *Pesan:* "${msg.body}"\n` +
+            `🏷️ *Status DB:* ${prospect?.status || 'Tidak dikenal'}\n\n` +
+            `👉 [Balas di WhatsApp](https://wa.me/${rawDigits})`
+        ).catch(() => {});
 
     } catch (error) {
-        console.error('[AI Negotiator] Terjadi error saat memproses pesan masuk:', error);
+        console.error('[WA INCOMING] Error:', error);
     }
 });
 

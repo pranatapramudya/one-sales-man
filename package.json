@@ -5,13 +5,25 @@
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
-    "start": "next start"
+    "start": "next start",
+    "scrape": "tsx src/pipeline/cli-scrape.ts",
+    "auto:scrape": "tsx src/pipeline/auto-scrape.ts",
+    "master": "tsx src/pipeline/master-pipeline.ts",
+    "outreach": "tsx src/pipeline/cli-outreach.ts",
+    "email:outreach": "tsx src/pipeline/cli-email-outreach.ts",
+    "email:warmup": "tsx src/pipeline/cli-email-warmup.ts",
+    "report": "tsx src/pipeline/export-report.ts",
+    "pair": "tsx src/pipeline/cli-pair.ts",
+    "cs": "tsx src/pipeline/cli-cs.ts",
+    "nightly": "tsx src/pipeline/cli-nightly-stats.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
     "@prisma/adapter-neon": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "@tailwindcss/postcss": "^4.3.3",
+    "axios": "^1.20.0",
+    "csv-parse": "^7.0.2",
     "dotenv": "^17.4.2",
     "groq-sdk": "^1.5.0",
     "next": "16.2.9",
@@ -20,9 +32,11 @@
     "qrcode-terminal": "^0.12.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
+    "resend": "^4.8.0",
     "tailwindcss": "^4.3.3",
     "whatsapp-web.js": "^1.34.7",
-    "ws": "^8.21.1"
+    "ws": "^8.21.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/node": "^20",

@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 import prisma from '../lib/prisma';
-import { whatsappClient, sendColdMessage } from '../whatsapp/client';
+import { sendTemplate } from '../whatsapp/cloud-api';
 
 // ── LAPISAN 1: SMART NAME SANITIZER ──────────────────────────────────────────
 export function sanitizeBusinessName(rawName: string): string {
@@ -150,13 +150,7 @@ export function getNicheHook(category: string | null, cleanName: string): string
     cat.includes('travel') || cat.includes('tour') || cat.includes('kos') || cat.includes('kost') ||
     cat.includes('homestay') || cat.includes('villa') || cat.includes('penginapan') || cat.includes('ps')
   ) {
-    return `Halo Kak di \${cleanName}, salam kenal dari tim PJTech 🙏
-
-Izin tanya Kak, untuk pencatatan jadwal booking armada/kamar, catat DP, dan cetak kuitansinya saat ini sudah pakai sistem otomatis atau masih rekap di buku/WA ya Kak?
-
-Kebetulan kami ada sistem kasir digital khusus usaha rental & penginapan (bisa dibuka fleksibel lewat HP, tablet, maupun laptop tanpa perlu beli alat mahal). Jadwal sewa rapi dan omzet harian kepantau langsung secara real-time.
-
-Akses uji coba gratisnya bisa dicoba di https://pjtechumkm.com ya Kak. Biar nggak repot setup dari nol, tim kami juga siap bantu inputkan 2-3 data armada/unit awal Kakak secara gratis 😊`;
+    return `Halo Kak di ${cleanName}, salam kenal dari tim PJTech 🙏\n\nIzin tanya Kak, untuk pencatatan jadwal booking armada/kamar, catat DP, dan cetak kuitansinya saat ini sudah pakai sistem otomatis atau masih rekap di buku/WA ya Kak?\n\nKebetulan kami ada sistem kasir digital khusus usaha rental & penginapan (bisa dibuka fleksibel lewat HP, tablet, maupun laptop tanpa perlu beli alat mahal). Jadwal sewa rapi dan omzet harian kepantau langsung secara real-time.\n\nAkses uji coba gratisnya bisa dicoba di https://pjtechumkm.com ya Kak. Biar nggak repot setup dari nol, tim kami juga siap bantu inputkan 2-3 data armada/unit awal Kakak secara gratis 😊`;
   }
 
   // 2. Pilar F&B (Kuliner, Kafe, Resto, Kedai, Minuman)
@@ -166,13 +160,7 @@ Akses uji coba gratisnya bisa dicoba di https://pjtechumkm.com ya Kak. Biar ngga
     cat.includes('bakery') || cat.includes('roti') || cat.includes('kedai') || cat.includes('mie') ||
     cat.includes('bakso') || cat.includes('boba') || cat.includes('teh')
   ) {
-    return `Halo Kak di \${cleanName}, salam kenal dari tim PJTech 🙏
-
-Izin tanya Kak, pas jam ramai, untuk rekap orderan nomor meja kasir dan cetak struk pesanan ke dapur saat ini sudah pakai sistem kasir otomatis atau masih manual ya Kak?
-
-Kebetulan kami mengembangkan sistem kasir UMKM kuliner yang bisa jalan fleksibel di HP pelayan, tablet kasir, maupun laptop tanpa perlu mesin kasir jutaan rupiah. Rekap meja rapi dan omzet harian bisa dipantau langsung dari HP owner.
-
-Akses coba gratisnya bisa langsung dicek di https://pjtechumkm.com ya Kak. Kalau mau dibantu inputkan beberapa menu awal biar tinggal tes pakai, tim kami siap bantu inputkan gratis Kak 😊`;
+    return `Halo Kak di ${cleanName}, salam kenal dari tim PJTech 🙏\n\nIzin tanya Kak, pas jam ramai, untuk rekap orderan nomor meja kasir dan cetak struk pesanan ke dapur saat ini sudah pakai sistem kasir otomatis atau masih manual ya Kak?\n\nKebetulan kami mengembangkan sistem kasir UMKM kuliner yang bisa jalan fleksibel di HP pelayan, tablet kasir, maupun laptop tanpa perlu mesin kasir jutaan rupiah. Rekap meja rapi dan omzet harian bisa dipantau langsung dari HP owner.\n\nAkses coba gratisnya bisa langsung dicek di https://pjtechumkm.com ya Kak. Kalau mau dibantu inputkan beberapa menu awal biar tinggal tes pakai, tim kami siap bantu inputkan gratis Kak 😊`;
   }
 
   // 3. Pilar Jasa & Servis (Barber, Salon, Bengkel, Laundry, Servis Elektronik)
@@ -181,23 +169,27 @@ Akses coba gratisnya bisa langsung dicek di https://pjtechumkm.com ya Kak. Kalau
     cat.includes('barber') || cat.includes('bengkel') || cat.includes('laundry') || cat.includes('cuci') ||
     cat.includes('klinik') || cat.includes('spa') || cat.includes('refleksi')
   ) {
-    return `Halo Kak di \${cleanName}, salam kenal dari tim PJTech 🙏
-
-Izin tanya Kak, untuk pembagian komisi bagi hasil capster/mekanik/karyawan dan cetak nota kasir saat ini sudah otomatis atau masih dihitung manual tiap tutup toko ya Kak?
-
-Kebetulan sistem kasir PJTech bisa dibuka langsung dari HP, tablet, atau laptop kasir dengan fitur hitung komisi karyawan otomatis dan rekap omzet harian tanpa repot kalkulator.
-
-Akses coba gratisnya bisa dicoba di https://pjtechumkm.com ya Kak. Biar nggak repot setup dari nol, tim kami juga siap bantu inputkan tarif layanan awal Kakak secara gratis 😊`;
+    return `Halo Kak di ${cleanName}, salam kenal dari tim PJTech 🙏\n\nIzin tanya Kak, untuk pembagian komisi bagi hasil capster/mekanik/karyawan dan cetak nota kasir saat ini sudah otomatis atau masih dihitung manual tiap tutup toko ya Kak?\n\nKebetulan sistem kasir PJTech bisa dibuka langsung dari HP, tablet, atau laptop kasir dengan fitur hitung komisi karyawan otomatis dan rekap omzet harian tanpa repot kalkulator.\n\nAkses coba gratisnya bisa dicoba di https://pjtechumkm.com ya Kak. Biar nggak repot setup dari nol, tim kami juga siap bantu inputkan tarif layanan awal Kakak secara gratis 😊`;
   }
 
   // 4. Pilar Retail & Grosir (Toko Kelontong, Kosmetik, Konter HP, Butik, Petshop, Bangunan, ATK, Apotek)
-  return `Halo Kak di \${cleanName}, salam kenal dari tim PJTech 🙏
+  return `Halo Kak di ${cleanName}, salam kenal dari tim PJTech 🙏\n\nIzin tanya Kak, untuk scan barcode produk, kontrol stok biar gak selisih, dan rekap laba modal harian saat ini sudah pakai sistem kasir otomatis atau masih rekap manual ya Kak?\n\nKebetulan sistem kasir PJTech dirancang ringan untuk toko retail (bisa jalan di HP, tablet, maupun laptop kasir). Bisa scan barcode langsung dari kamera HP atau scanner USB, dan otomatis kasih peringatan kalau stok mulai habis.\n\nCoba gratisnya bisa diakses di https://pjtechumkm.com ya Kak. Tim kami juga siap bantu inputkan beberapa contoh produk awal secara gratis biar tinggal tes coba 😊`;
+}
 
-Izin tanya Kak, untuk scan barcode produk, kontrol stok biar gak selisih, dan rekap laba modal harian saat ini sudah pakai sistem kasir otomatis atau masih rekap manual ya Kak?
+// ── TEMPLATE MAPPING PER KATEGORI ────────────────────────────────────────────
+function getTemplateName(category: string | null): string {
+  const cat = (category || '').toLowerCase();
 
-Kebetulan sistem kasir PJTech dirancang ringan untuk toko retail (bisa jalan di HP, tablet, maupun laptop kasir). Bisa scan barcode langsung dari kamera HP atau scanner USB, dan otomatis kasih peringatan kalau stok mulai habis.
+  // Untuk first contact / outreach → pakai template MARKETING
+  return 'outreach_intro';
+}
 
-Coba gratisnya bisa diakses di https://pjtechumkm.com ya Kak. Tim kami juga siap bantu inputkan beberapa contoh produk awal secara gratis biar tinggal tes coba 😊`;
+function getTemplateParams(category: string | null, cleanName: string): string[] {
+  const cat = (category || '').toLowerCase();
+  const feature = getCategoryFeature(category);
+
+  // Template outreach_intro expects 2 params: {{1}} = nama, {{2}} = fitur/category
+  return [cleanName, feature];
 }
 
 // ── HELPER DELAY ANTI-BAN (30s - 60s) ────────────────────────────────────────
@@ -343,9 +335,9 @@ export function buildCategoryQuery(category?: string): any {
   return { category: { contains: cat, mode: 'insensitive' } };
 }
 
-// ── FUNGSI UTAMA BATCH OUTREACH ──────────────────────────────────────────────
+// ── FUNGSI UTAMA BATCH OUTREACH (WhatsApp Cloud API) ─────────────────────────
 async function runBatchOutreach(batchLimit: number = 10, category?: string, city?: string) {
-  console.log(`[OUTREACH_START] Memulai batch outreach (Maksimal: ${batchLimit} prospek PENDING | Filter: ${category || 'Semua'} - ${city || 'Semua'})...`);
+  console.log(`[OUTREACH_START] Memulai batch outreach Cloud API (Maksimal: ${batchLimit} prospek PENDING | Filter: ${category || 'Semua'} - ${city || 'Semua'})...`);
 
   const whereClause: any = { status: 'PENDING' };
   const catFilter = buildCategoryQuery(category);
@@ -379,7 +371,7 @@ async function runBatchOutreach(batchLimit: number = 10, category?: string, city
     return { contacted: 0, failed: 0, targetInfo: `${category || 'Semua'} di ${city || 'Semua'}` };
   }
 
-  console.log(`[OUTREACH_FOUND] Ditemukan ${pendingProspects.length} prospek PENDING siap dihubungi.`);
+  console.log(`[OUTREACH_FOUND] Ditemukan ${pendingProspects.length} prospek PENDING siap dihubungi via Cloud API.`);
 
   let successCount = 0;
   let failCount = 0;
@@ -388,36 +380,40 @@ async function runBatchOutreach(batchLimit: number = 10, category?: string, city
   for (const prospect of pendingProspects) {
     currentIndex++;
 
-    // 1. Lapisan 1: Bersihkan nama bisnis dari embel-embel Google Maps
+    // Klaim sebelum mengirim
+    const claim = await prisma.prospect.updateMany({
+      where: { id: prospect.id, status: 'PENDING' },
+      data: { status: 'CONTACTED', lastContactedAt: new Date() }
+    });
+    if (claim.count !== 1) {
+      console.log(`[OUTREACH_SKIP] ${prospect.businessName} sudah diklaim proses lain.`);
+      continue;
+    }
+
+    // 1. Bersihkan nama bisnis
     const cleanName = sanitizeBusinessName(prospect.businessName);
 
-    // 2. Lapisan 2: Buat pesan baku dengan variasi fitur spesifik kategori
-    const finalMessage = getNicheHook(prospect.category, cleanName);
+    // 2. Dapatkan template name & params
+    const templateName = getTemplateName(prospect.category);
+    const templateParams = getTemplateParams(prospect.category, cleanName);
 
-    console.log(`[OUTREACH_TEXT ${currentIndex}/${pendingProspects.length}]:\n"${finalMessage}"\n`);
-    console.log(`[OUTREACH_SENDING ${currentIndex}/${pendingProspects.length}] Mengirim pesan ke ${cleanName} (${prospect.whatsappNumber})...`);
+    console.log(`[OUTREACH_TEMPLATE ${currentIndex}/${pendingProspects.length}]: "${templateName}" → ${templateParams.join(', ')}`);
+    console.log(`[OUTREACH_SENDING ${currentIndex}/${pendingProspects.length}] Mengirim template ke ${cleanName} (${prospect.whatsappNumber})...`);
 
-    const success = await sendColdMessage(prospect.whatsappNumber, finalMessage);
+    // 3. Kirim via Cloud API (template message)
+    const result = await sendTemplate(prospect.whatsappNumber, templateName, templateParams, 'id');
 
-    if (success) {
+    if (result.success) {
       successCount++;
-      await prisma.prospect.update({
-        where: { id: prospect.id },
-        data: {
-          status: 'CONTACTED',
-          lastContactedAt: new Date()
-        }
-      });
-
       await prisma.outreachMessage.create({
         data: {
           prospectId: prospect.id,
-          messageText: finalMessage
+          messageText: `[TEMPLATE:${templateName}] ${templateParams.join(' | ')}`
         }
       });
-      console.log(`[OUTREACH_SUCCESS] ${cleanName} status diupdate ke CONTACTED.`);
+      console.log(`[OUTREACH_SUCCESS] ${cleanName} status diupdate ke CONTACTED (MessageID: ${result.messageId}).`);
 
-      // Jeda acak 30s - 60s SETELAH setiap pengiriman pesan sukses sebelum lanjut ke prospek berikutnya
+      // Jeda acak 30s - 60s SETELAH setiap pengiriman pesan sukses
       if (currentIndex < pendingProspects.length) {
         console.log(`⏳ [ANTI-BAN DELAY] Menunggu jeda aman sebelum kontak berikutnya...`);
         const waitedMs = await randomDelay(30000, 60000);
@@ -425,7 +421,12 @@ async function runBatchOutreach(batchLimit: number = 10, category?: string, city
       }
     } else {
       failCount++;
-      console.log(`[OUTREACH_FAILED] Gagal mengirim pesan ke ${cleanName}.`);
+      // Gagal kirim → kembali ke antrean PENDING
+      await prisma.prospect.update({
+        where: { id: prospect.id },
+        data: { status: 'PENDING', lastContactedAt: null }
+      });
+      console.log(`[OUTREACH_FAILED] Gagal mengirim template ke ${cleanName}: ${result.error}`);
     }
   }
 
@@ -433,11 +434,35 @@ async function runBatchOutreach(batchLimit: number = 10, category?: string, city
   return { contacted: successCount, failed: failCount, targetInfo: `${category || 'Semua'} di ${city || 'Semua'}` };
 }
 
+// ── TEST MODE: Kirim template ke nomor pribadi ────────────────────────────────
+async function runTestMode() {
+  const testNumber = '081395053922'; // Nomor pribadi untuk tes
+  const templateName = 'outreach_intro';
+  const cleanName = 'Test User';
+  const templateParams = [cleanName, 'catat transaksi kasir dan rekap omzet harian'];
+
+  console.log(`[TEST_MODE] Mengirim template "${templateName}" ke nomor pribadi ${testNumber}...`);
+  
+  const result = await sendTemplate(testNumber, templateName, templateParams, 'id');
+  
+  if (result.success) {
+    console.log(`[TEST_SUCCESS] Template terkirim! MessageID: ${result.messageId}`);
+    console.log(`Cek WhatsApp nomor ${testNumber} - seharusnya terkirim template outreach_intro.`);
+  } else {
+    console.log(`[TEST_FAILED] ${result.error}`);
+  }
+  
+  await prisma.$disconnect();
+  process.exit(result.success ? 0 : 1);
+}
+
+// ── MAIN ENTRY ────────────────────────────────────────────────────────────────
 async function main() {
   const args = process.argv.slice(2);
   let batchLimit = 10;
   let category: string | undefined;
   let city: string | undefined;
+  let testMode = false;
 
   for (const arg of args) {
     if (arg.startsWith('--batch=')) {
@@ -446,39 +471,29 @@ async function main() {
       category = arg.replace('--category=', '').replace(/^["']|["']$/g, '').trim();
     } else if (arg.startsWith('--city=')) {
       city = arg.replace('--city=', '').replace(/^["']|["']$/g, '').trim();
+    } else if (arg === '--test') {
+      testMode = true;
     }
   }
 
-  console.log('[WA_INIT] Menginisialisasi WhatsApp Client...');
+  if (testMode) {
+    console.log('[WA_CLOUD_API] Mode test - kirim template ke nomor pribadi');
+    await runTestMode();
+    return;
+  }
 
-  whatsappClient.on('qr', (qr) => {
-    console.log(`[WA_QR] ${qr}`);
-  });
+  console.log('[WA_CLOUD_API] Menggunakan WhatsApp Cloud API (Official Meta)');
+  console.log('[WA_CLOUD_API] Tidak perlu QR scan / session / multi-device');
+  console.log('[WA_CLOUD_API] Template-based messaging untuk first contact');
 
-  whatsappClient.initialize();
-
-  whatsappClient.on('ready', async () => {
-    console.log('[WA_READY] WhatsApp Client siap. Menunggu 5 detik untuk stabilisasi sesi multi-device...');
-    await new Promise((r) => setTimeout(r, 5000));
-    console.log('[WA_STABLE] Sesi stabil. Menjalankan smart batch outreach...');
-    try {
-      await runBatchOutreach(batchLimit, category, city);
-    } catch (err) {
-      console.error('[OUTREACH_ERROR]', err);
-    } finally {
-      setTimeout(async () => {
-        console.log('[WA_FINISH] Menutup koneksi secara aman...');
-        await prisma.$disconnect();
-        await whatsappClient.destroy().catch(() => {});
-        process.exit(0);
-      }, 5000);
-    }
-  });
-
-  whatsappClient.on('auth_failure', (msg) => {
-    console.error('[WA_AUTH_FAILURE]', msg);
-    process.exit(1);
-  });
+  try {
+    await runBatchOutreach(batchLimit, category, city);
+  } catch (err) {
+    console.error('[OUTREACH_ERROR]', err);
+  } finally {
+    await prisma.$disconnect();
+    process.exit(0);
+  }
 }
 
 // Hanya jalankan main jika dipanggil langsung sebagai CLI

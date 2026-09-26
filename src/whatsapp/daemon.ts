@@ -20,6 +20,15 @@ const PORT = 3847;
 
 let isReady = false;
 let isOutreachRunning = false;
+let outreachStatus = {
+    isRunning: false,
+    current: 0,
+    total: 0,
+    currentProspect: null as string | null,
+    successCount: 0,
+    failCount: 0,
+    message: 'Belum ada batch outreach yang dijalankan.'
+};
 
 function sanitizeBusinessName(rawName: string): string {
   if (!rawName) return 'Kak';
@@ -58,7 +67,7 @@ function getNicheHook(category: string | null, cleanName: string): string {
 
   // 1. Rental, Travel & Properti
   if (cat.includes('rental') || cat.includes('sewa') || cat.includes('mobil') || cat.includes('motor') || cat.includes('travel') || cat.includes('kos') || cat.includes('homestay') || cat.includes('villa')) {
-    return `Halo Kak di \${cleanName}, salam kenal dari tim PJTech 🙏
+    return `Halo Kak di ${cleanName}, salam kenal dari tim PJTech 🙏
 
 Izin tanya Kak, untuk pencatatan jadwal booking armada/kamar, catat DP, dan cetak kuitansinya saat ini sudah pakai sistem otomatis atau masih rekap di buku/WA ya Kak?
 
@@ -69,7 +78,7 @@ Akses uji coba gratisnya bisa dicoba di https://pjtechumkm.com ya Kak. Biar ngga
 
   // 2. F&B Kuliner
   if (cat.includes('kafe') || cat.includes('cafe') || cat.includes('kopi') || cat.includes('resto') || cat.includes('makan') || cat.includes('fnb') || cat.includes('kuliner') || cat.includes('kedai')) {
-    return `Halo Kak di \${cleanName}, salam kenal dari tim PJTech 🙏
+    return `Halo Kak di ${cleanName}, salam kenal dari tim PJTech 🙏
 
 Izin tanya Kak, pas jam ramai, untuk rekap orderan nomor meja kasir dan cetak struk pesanan ke dapur saat ini sudah pakai sistem kasir otomatis atau masih manual ya Kak?
 
@@ -80,7 +89,7 @@ Akses coba gratisnya bisa langsung dicek di https://pjtechumkm.com ya Kak. Kalau
 
   // 3. Jasa & Servis
   if (cat.includes('jasa') || cat.includes('servis') || cat.includes('salon') || cat.includes('barber') || cat.includes('bengkel') || cat.includes('laundry') || cat.includes('cuci')) {
-    return `Halo Kak di \${cleanName}, salam kenal dari tim PJTech 🙏
+    return `Halo Kak di ${cleanName}, salam kenal dari tim PJTech 🙏
 
 Izin tanya Kak, untuk pembagian komisi bagi hasil capster/mekanik/karyawan dan cetak nota kasir saat ini sudah otomatis atau masih dihitung manual tiap tutup toko ya Kak?
 
@@ -90,7 +99,7 @@ Akses coba gratisnya bisa dicoba di https://pjtechumkm.com ya Kak. Biar nggak re
   }
 
   // 4. Retail & Grosir
-  return `Halo Kak di \${cleanName}, salam kenal dari tim PJTech 🙏
+  return `Halo Kak di ${cleanName}, salam kenal dari tim PJTech 🙏
 
 Izin tanya Kak, untuk scan barcode produk, kontrol stok biar gak selisih, dan rekap laba modal harian saat ini sudah pakai sistem kasir otomatis atau masih rekap manual ya Kak?
 
@@ -102,10 +111,10 @@ Coba gratisnya bisa diakses di https://pjtechumkm.com ya Kak. Tim kami juga siap
 whatsappClient.on('ready', () => {
     isReady = true;
     console.log(`\n===========================================================`);
-    console.log(` 📱 WHATSAPP BUSINESS DAEMON & AI CHAT ACTIVE 24/7`);
+    console.log(` 📱 WHATSAPP BUSINESS DAEMON (HUMAN HANDOFF) ACTIVE 24/7`);
     console.log(` • Status         : 🟢 Connected & Listening Incoming Chats`);
     console.log(` • Internal Port  : http://127.0.0.1:${PORT}`);
-    console.log(` • AI Engine      : Groq (Qwen 3.8 27B) + Gemini Flash Fallback`);
+    console.log(` • Pesan masuk    : Notifikasi Telegram untuk follow-up manual`);
     console.log(`===========================================================\n`);
 });
 
@@ -124,6 +133,10 @@ const server = http.createServer(async (req, res) => {
             outreachActive: isOutreachRunning,
             latestQr: getLatestQr() || null
         }));
+    }
+
+    if (req.method === 'GET' && req.url === '/outreach-status') {
+        return res.end(JSON.stringify(outreachStatus));
     }
 
     if (req.method === 'POST' && req.url === '/trigger-outreach') {
@@ -152,6 +165,15 @@ const server = http.createServer(async (req, res) => {
             const city = params.city;
 
             isOutreachRunning = true;
+            outreachStatus = {
+                isRunning: true,
+                current: 0,
+                total: 0,
+                currentProspect: null,
+                successCount: 0,
+                failCount: 0,
+                message: 'Menyiapkan antrean outreach.'
+            };
             res.writeHead(200).end(JSON.stringify({
                 success: true,
                 message: `Batch outreach dimulai untuk maksimal ${batchLimit} prospek PENDING.`
@@ -174,29 +196,52 @@ const server = http.createServer(async (req, res) => {
                 }
 
                 console.log(`[WA_DAEMON] Memulai batch outreach ke ${prospects.length} prospek...`);
+                outreachStatus.total = prospects.length;
+                if (prospects.length === 0) {
+                    outreachStatus.message = 'Tidak ada prospek PENDING untuk dihubungi.';
+                }
 
                 let successCount = 0;
                 let failCount = 0;
 
                 for (let i = 0; i < prospects.length; i++) {
                     const p = prospects[i];
+
+                    // Klaim secara atomik. Jika proses lain sudah mengklaim prospek ini,
+                    // jangan kirim pesan kedua.
+                    const claim = await prisma.prospect.updateMany({
+                        where: { id: p.id, status: 'PENDING' },
+                        data: { status: 'CONTACTED', lastContactedAt: new Date() }
+                    });
+                    if (claim.count !== 1) {
+                        console.log(`[OUTREACH_SKIP] ${p.businessName} sudah diklaim proses lain.`);
+                        continue;
+                    }
+
                     const cleanName = sanitizeBusinessName(p.businessName);
                     const finalMessage = getNicheHook(p.category, cleanName);
+
+                    outreachStatus.current = i + 1;
+                    outreachStatus.currentProspect = cleanName;
+                    outreachStatus.message = `Mengirim pesan ke ${cleanName}.`;
 
                     console.log(`[OUTREACH ${i+1}/${prospects.length}] Kirim ke ${cleanName} (${p.whatsappNumber})...`);
                     const ok = await sendColdMessage(p.whatsappNumber, finalMessage);
 
                     if (ok) {
                         successCount++;
-                        await prisma.prospect.update({
-                            where: { id: p.id },
-                            data: { status: 'CONTACTED', lastContactedAt: new Date() }
-                        });
+                        outreachStatus.successCount = successCount;
                         await prisma.outreachMessage.create({
                             data: { prospectId: p.id, messageText: finalMessage }
                         });
                     } else {
                         failCount++;
+                        outreachStatus.failCount = failCount;
+                        // Pengiriman gagal tidak boleh mengunci prospek selamanya.
+                        await prisma.prospect.update({
+                            where: { id: p.id },
+                            data: { status: 'PENDING', lastContactedAt: null }
+                        });
                     }
 
                     // Jeda aman anti-ban antar pesan (30s - 45s)
@@ -207,10 +252,14 @@ const server = http.createServer(async (req, res) => {
                     }
                 }
                 console.log(`✅ [WA_DAEMON] Outreach batch selesai: ${successCount} sukses, ${failCount} gagal.`);
+                outreachStatus.message = `Batch selesai: ${successCount} terkirim, ${failCount} gagal.`;
             } catch (err: any) {
                 console.error('❌ [WA_DAEMON] Error saat outreach batch:', err?.message);
+                outreachStatus.message = `Batch gagal: ${err?.message || 'error tidak diketahui'}`;
             } finally {
                 isOutreachRunning = false;
+                outreachStatus.isRunning = false;
+                outreachStatus.currentProspect = null;
             }
         });
         return;
@@ -223,4 +272,15 @@ server.listen(PORT, '127.0.0.1', () => {
     console.log(`🚀 [WA_DAEMON] Server bridge aktif di http://127.0.0.1:${PORT}`);
     console.log(`📱 [WA_DAEMON] Menginisialisasi WhatsApp Client...`);
     whatsappClient.initialize();
+});
+
+// Port yang sudah dipakai berarti daemon lain sudah aktif. Keluar segera agar
+// proses duplikat tidak bertahan dan memasang listener WhatsApp tambahan.
+server.on('error', (err: NodeJS.ErrnoException) => {
+    if (err.code === 'EADDRINUSE') {
+        console.error(`⛔ [WA_DAEMON] Port ${PORT} sudah dipakai; instansi duplikat dihentikan.`);
+        process.exit(0);
+    }
+    console.error('❌ [WA_DAEMON] HTTP server error:', err.message);
+    process.exit(1);
 });
