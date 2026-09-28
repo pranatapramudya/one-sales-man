@@ -88,10 +88,9 @@ export async function runFullPipeline() {
 async function runScheduler() {
   console.log('⏰ Scheduler started. Press Ctrl+C to stop.');
   
-  // Run immediately on start
-  await runFullPipeline();
+  // TIDAK jalanin full pipeline langsung pas start (mencegah notif dobel pas boot)
+  // Full pipeline hanya jalan via jadwal atau manual CLI
   
-  // Then schedule (contoh: setiap 2 jam untuk scrape, harian jam 10 untuk email)
   const SCRAPE_INTERVAL_MS = 2 * 60 * 60 * 1000; // 2 jam
   const DAILY_EMAIL_HOUR = 10; // jam 10 pagi
   const DAILY_REPORT_HOUR = 20; // jam 8 malam
