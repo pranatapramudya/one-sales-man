@@ -112,7 +112,7 @@ async function extractEmailFromMapsPanel(page: any): Promise<{ email: string | n
         // Get all text from the detail panel
         const panelText = await page.evaluate(() => {
             const panel = document.querySelector('[role="main"]') || document.body;
-            return panel?.innerText || '';
+            return (panel as HTMLElement)?.innerText || '';
         });
         
         const email = extractEmailFromText(panelText);
@@ -146,7 +146,7 @@ async function extractEmailFromSocialMedia(page: any, businessName: string): Pro
         // Find social media links in Maps panel
         const socialLinks = await page.evaluate(() => {
             const links = Array.from(document.querySelectorAll('a[href*="instagram.com"], a[href*="facebook.com"], a[href*="wa.me"], a[href*="api.whatsapp.com"]'));
-            return links.map(a => ({ href: a.getAttribute('href'), text: a.innerText })).filter(l => l.href);
+            return links.map(a => ({ href: a.getAttribute('href'), text: (a as HTMLElement).innerText })).filter(l => l.href);
         });
         
         for (const link of socialLinks.slice(0, 2)) { // Limit to 2 social links
@@ -161,7 +161,7 @@ async function extractEmailFromSocialMedia(page: any, businessName: string): Pro
                         const bio = document.querySelector('header section') || 
                                    document.querySelector('[data-testid="user-bio"]') ||
                                    document.body;
-                        return bio?.innerText || '';
+                        return (bio as HTMLElement)?.innerText || '';
                     });
                     
                     const email = extractEmailFromText(bioText);

@@ -120,12 +120,12 @@ async function updateScrapingState(updates: Partial<{
 }
 
 // ─── MAIN ORCHESTRATOR ───────────────────────────────────────────────────────
-export async function runAutomatedScraping(limitPerRun: number = 15) {
+export async function runAutomatedScraping(limitPerRun: number = 15): Promise<{ success: boolean; message: string; totalScraped?: number; emailsFound?: number }> {
   const state = await getScrapingState();
   
   if (state.isRunning) {
     console.log('⏭️ Scraping sudah berjalan, skip...');
-    return;
+    return { success: true, message: 'Scraping sudah berjalan, skip', totalScraped: 0, emailsFound: 0 };
   }
   
   await updateScrapingState({ isRunning: true, lastError: null });
@@ -142,11 +142,8 @@ export async function runAutomatedScraping(limitPerRun: number = 15) {
     let emailsThisRun = 0;
     
     console.log(`🤖 AUTO SCRAPE START | Wave: ${state.currentWave} | Vertical: ${verticals[verticalIdx]?.keyword} | City: ${cities[cityIdx]}`);
-    
-    // Kirim notif Telegram mulai
-    await sendTelegramNotification(`🤖 *Auto Scrape Started*\nWave: ${state.currentWave}\nTarget: ${verticals[verticalIdx]?.keyword} di ${cities[cityIdx]}\nLimit: ${limitPerRun}`);
-    
-    // Loop: coba vertical & city saat ini, kalau habis lanjut ke berikutnya
+
+        // Loop: coba vertical & city saat ini, kalau habis lanjut ke berikutnya
     while (totalThisRun < limitPerRun && verticalIdx < verticals.length) {
       const vertical = verticals[verticalIdx];
       
@@ -220,19 +217,14 @@ export async function runAutomatedScraping(limitPerRun: number = 15) {
     console.log(`  Prospek baru: ${totalThisRun}`);
     console.log(`  Email ditemukan: ${emailsThisRun}`);
     console.log(`  Wave: ${state.currentWave} | Vertical: ${verticalIdx}/${verticals.length} | City: ${cityIdx}/${cities.length}`);
-    
-    await sendTelegramNotification(
-      `✅ *Auto Scrape Selesai*\n` +
-      `Prospek baru: ${totalThisRun}\n` +
-      `Email ditemukan: ${emailsThisRun}\n` +
-      `Wave: ${state.currentWave} | Progress: ${verticalIdx}/${verticals.length} vertikal\n` +
-      `Total lifetime: ${state.totalScraped + totalThisRun}`
-    );
+
+    return { success: true, message: `Scrape selesai: ${totalThisRun} prospek baru, ${emailsThisRun} email ditemukan`, totalScraped: totalThisRun, emailsFound: emailsThisRun };
     
   } catch (err: any) {
     console.error('❌ Fatal error:', err);
     await sendTelegramNotification(`❌ *Auto Scrape Error*\n${err.message}`);
     await updateScrapingState({ lastError: err.message });
+    return { success: false, message: `Fatal error: ${err.message}`, totalScraped: 0, emailsFound: 0 };
   } finally {
     await updateScrapingState({ isRunning: false, lastRunAt: new Date() });
   }

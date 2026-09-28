@@ -64,6 +64,11 @@ export function buildEmailTemplate(
 ): EmailTemplate {
   const subject = `POS Kasir ${category || 'UMKM'} ${cleanName} - 990k/tahun`;
   
+  // WA link dengan prefilled message
+  const waNumber = '6285723256427';
+  const waMessage = encodeURIComponent(`Halo, saya tertarik dengan POS PJTech untuk ${category || 'usaha saya'} (${cleanName}). Bisa info lebih detail?`);
+  const waLink = `https://wa.me/${waNumber}?text=${waMessage}`;
+  
   const html = `
 <!DOCTYPE html>
 <html>
@@ -96,8 +101,11 @@ export function buildEmailTemplate(
     <p>Harga transparan: <strong>Rp 990.000/tahun</strong> (Rp 82.500/bulan). Tidak ada biaya tersembunyi.</p>
     
     <div style="text-align: center; margin: 30px 0;">
-      <a href="https://pjtechumkm.com" style="display: inline-block; background: #3b82f6; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+      <a href="https://pjtechumkm.com" style="display: inline-block; background: #3b82f6; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-right: 10px;">
         Coba Gratis 14 Hari →
+      </a>
+      <a href="${waLink}" style="display: inline-block; background: #25D366; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+        💬 Chat via WhatsApp
       </a>
     </div>
     
@@ -130,6 +138,7 @@ Kebetulan kami punya sistem kasir digital khusus ${category || 'usaha Anda'}:
 Harga transparan: Rp 990.000/tahun (Rp 82.500/bulan). Tidak ada biaya tersembunyi.
 
 Coba gratis 14 hari: https://pjtechumkm.com
+Chat via WhatsApp: ${waLink}
 
 Tim kami siap bantu input data awal (armada/menu/layanan/produk) gratis biar langsung bisa dipakai.
 
@@ -205,4 +214,175 @@ export function sanitizeBusinessName(rawName: string): string {
   if (words.length > 4) name = words.slice(0, 4).join(' ');
   name = name.replace(/[\s&,\-|/]+$/, '').trim();
   return name || rawName;
+}
+
+// ─── FOLLOW-UP EMAIL TEMPLATES ───────────────────────────────────────────────
+export function buildFollowUp1Template(
+  cleanName: string,
+  category: string | null,
+  feature: string,
+  unsubscribeUrl: string
+): EmailTemplate {
+  const subject = `Follow-up: POS Kasir ${category || 'UMKM'} ${cleanName} - Gratis 14 Hari`;
+  
+  const waNumber = '6285723256427';
+  const waMessage = encodeURIComponent(`Halo, saya tertarik dengan POS PJTech untuk ${category || 'usaha saya'} (${cleanName}). Bisa info lebih detail?`);
+  const waLink = `https://wa.me/${waNumber}?text=${waMessage}`;
+  
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 30px; border-radius: 12px 12px 0 0;">
+    <h1 style="color: white; margin: 0; font-size: 24px;">PJTech Kasir UMKM</h1>
+    <p style="color: #fef3c7; margin: 10px 0 0;">Follow-up: Sistem Kasir Digital untuk UMKM Indonesia</p>
+  </div>
+  
+  <div style="background: #fafafa; padding: 30px; border-radius: 0 0 12px 12px; border: 1px solid #e5e7eb; border-top: none;">
+    <p style="font-size: 16px;">Halo <strong>${cleanName}</strong>,</p>
+    
+    <p>Follow-up email sebelumnya 🙏</p>
+    
+    <p>Mungkin email kemarin kelewat atau belum sempat dibuka. Saya coba kirim lagi singkat:</p>
+    
+    <div style="background: white; border-left: 4px solid #f59e0b; padding: 20px; margin: 20px 0; border-radius: 0 8px 8px 0;">
+      <p style="margin: 0 0 10px;"><strong>Kami punya POS kasir digital khusus ${category || 'usaha Anda'} cuma Rp 990k/tahun:</strong></p>
+      <ul style="margin: 0; padding-left: 20px;">
+        <li>Bisa dari HP/Tablet/Laptop — tidak perlu beli mesin kasir</li>
+        <li>Rekap omzet & laporan pajak otomatis real-time</li>
+        <li><strong>Coba GRATIS 14 hari</strong> (tanpa kartu kredit)</li>
+      </ul>
+    </div>
+    
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="https://pjtechumkm.com" style="display: inline-block; background: #f59e0b; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-right: 10px;">
+        Coba Gratis 14 Hari →
+      </a>
+      <a href="${waLink}" style="display: inline-block; background: #25D366; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+        💬 Chat via WhatsApp
+      </a>
+    </div>
+    
+    <p style="font-size: 14px; color: #6b7280;">
+      Tim kami siap bantu input data awal (menu/armada/produk/layanan) GRATIS biar langsung pakai.
+    </p>
+    
+    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+    
+    <p style="font-size: 12px; color: #9ca3af; text-align: center;">
+      Kalau tidak relevan, <a href="${unsubscribeUrl}" style="color: #9ca3af;">unsubscribe di sini</a>.<br>
+      PJTech • Kasir UMKM Digital • pjtechumkm.com
+    </p>
+  </div>
+</body>
+</html>`;
+
+  const text = `
+Halo ${cleanName},
+
+Follow-up email sebelumnya 🙏
+
+Mungkin email kemarin kelewat. Singkat aja:
+Kami punya POS kasir digital khusus ${category || 'usaha Anda'} cuma Rp 990k/tahun.
+- Bisa dari HP/Tablet/Laptop — tidak perlu beli mesin kasir
+- Rekap omzet & laporan pajak otomatis real-time
+- Coba GRATIS 14 hari (tanpa kartu kredit)
+
+Coba gratis: https://pjtechumkm.com
+Chat WhatsApp: ${waLink}
+
+Tim kami siap bantu input data awal GRATIS.
+
+---
+Kalau tidak relevan, unsubscribe: ${unsubscribeUrl}
+PJTech • Kasir UMKM Digital • pjtechumkm.com
+`;
+
+  return { subject, html, text };
+}
+
+export function buildFollowUp2Template(
+  cleanName: string,
+  category: string | null,
+  feature: string,
+  unsubscribeUrl: string
+): EmailTemplate {
+  const subject = `Terakhir: POS Kasir ${cleanName} - Gratis 14 Hari (No CC)`;
+  
+  const waNumber = '6285723256427';
+  const waMessage = encodeURIComponent(`Halo, saya tertarik dengan POS PJTech untuk ${category || 'usaha saya'} (${cleanName}). Bisa info lebih detail?`);
+  const waLink = `https://wa.me/${waNumber}?text=${waMessage}`;
+  
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); padding: 30px; border-radius: 12px 12px 0 0;">
+    <h1 style="color: white; margin: 0; font-size: 24px;">PJTech Kasir UMKM</h1>
+    <p style="color: #fecaca; margin: 10px 0 0;">Email terakhir dari kami</p>
+  </div>
+  
+  <div style="background: #fafafa; padding: 30px; border-radius: 0 0 12px 12px; border: 1px solid #e5e7eb; border-top: none;">
+    <p style="font-size: 16px;">Halo <strong>${cleanName}</strong>,</p>
+    
+    <p>Ini email terakhir dari kami soal POS kasir untuk usaha Anda.</p>
+    
+    <div style="background: #fef2f2; border: 1px solid #fecaca; padding: 20px; margin: 20px 0; border-radius: 8px;">
+      <p style="margin: 0 0 10px; color: #dc2626;"><strong>⏰ Kesempatan coba gratis 14 hari masih terbuka</strong></p>
+      <p style="margin: 0; color: #991b1b;">Tanpa kartu kredit, tanpa komitmen. Cuma butuh 2 menit setup.</p>
+    </div>
+    
+    <p>Fitur khusus ${category || 'usaha Anda'}: ${feature}</p>
+    
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="https://pjtechumkm.com" style="display: inline-block; background: #ef4444; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-right: 10px;">
+        Coba Gratis 14 Hari (Terakhir) →
+      </a>
+      <a href="${waLink}" style="display: inline-block; background: #25D366; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+        💬 Chat via WhatsApp
+      </a>
+    </div>
+    
+    <p style="font-size: 14px; color: #6b7280;">
+      Kalau nanti butuh, kami tetap di sini. Tinggal balas email ini atau chat WA.
+    </p>
+    
+    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+    
+    <p style="font-size: 12px; color: #9ca3af; text-align: center;">
+      <a href="${unsubscribeUrl}" style="color: #9ca3af;">Unsubscribe permanen</a>.<br>
+      PJTech • Kasir UMKM Digital • pjtechumkm.com
+    </p>
+  </div>
+</body>
+</html>`;
+
+  const text = `
+Halo ${cleanName},
+
+Ini email terakhir dari kami soal POS kasir untuk usaha Anda.
+
+⏰ Kesempatan coba gratis 14 hari masih terbuka — tanpa kartu kredit, tanpa komitmen.
+
+Fitur khusus ${category || 'usaha Anda'}: ${feature}
+
+Coba gratis (terakhir): https://pjtechumkm.com
+Chat WhatsApp: ${waLink}
+
+Kalau nanti butuh, kami tetap di sini. Tinggal balas email ini atau chat WA.
+
+---
+Unsubscribe permanen: ${unsubscribeUrl}
+PJTech • Kasir UMKM Digital • pjtechumkm.com
+`;
+
+  return { subject, html, text };
 }

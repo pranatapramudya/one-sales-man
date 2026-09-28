@@ -97,31 +97,32 @@ async function runScheduler() {
   const DAILY_REPORT_HOUR = 20; // jam 8 malam
   
   setInterval(async () => {
-    const now = new Date();
-    const hour = now.getHours();
-    
-    // Scrape setiap 2 jam (08, 10, 12, 14, 16, 18)
-    if ([8, 10, 12, 14, 16, 18].includes(hour)) {
-      console.log(`\n⏰ Scheduled scrape at ${now.toLocaleTimeString('id-ID')}`);
-      await runAutomatedScraping(10);
-    }
-    
-    // Email outreach harian jam 10
-    if (hour === DAILY_EMAIL_HOUR && now.getMinutes() < 5) {
-      console.log(`\n⏰ Scheduled email outreach at ${now.toLocaleTimeString('id-ID')}`);
-      await runEmailOutreachFn();
-    }
-    
-    // Report harian jam 20
-    if (hour === DAILY_REPORT_HOUR && now.getMinutes() < 5) {
-      console.log(`\n⏰ Scheduled report at ${now.toLocaleTimeString('id-ID')}`);
-      const reportResult = await generateReport();
-      if (reportResult.files) {
-        const xlsxFile = reportResult.files.find(f => f.endsWith('.xlsx'));
-        if (xlsxFile) await sendTelegramDocument(xlsxFile, `📊 Daily Recap ${now.toLocaleDateString('id-ID')}`);
+      const now = new Date();
+      const hour = now.getHours();
+      const minute = now.getMinutes();
+
+      // Scrape setiap 2 jam (08, 10, 12, 14, 16, 18) - HANYA MENIT KE-0 s.d 4
+      if ([8, 10, 12, 14, 16, 18].includes(hour) && minute < 5) {
+        console.log(`\n⏰ Scheduled scrape at ${now.toLocaleTimeString('id-ID')}`);
+        await runAutomatedScraping(10);
       }
-    }
-  }, 60 * 1000); // Check setiap menit
+
+      // Email outreach harian jam 10
+      if (hour === DAILY_EMAIL_HOUR && minute < 5) {
+        console.log(`\n⏰ Scheduled email outreach at ${now.toLocaleTimeString('id-ID')}`);
+        await runEmailOutreachFn();
+      }
+
+      // Report harian jam 20
+      if (hour === DAILY_REPORT_HOUR && minute < 5) {
+        console.log(`\n⏰ Scheduled report at ${now.toLocaleTimeString('id-ID')}`);
+        const reportResult = await generateReport();
+        if (reportResult.files) {
+          const xlsxFile = reportResult.files.find(f => f.endsWith('.xlsx'));
+          if (xlsxFile) await sendTelegramDocument(xlsxFile, `📊 Daily Recap ${now.toLocaleDateString('id-ID')}`);
+        }
+      }
+    }, 60 * 1000); // Check setiap menit
 }
 
 // ─── CLI ENTRY ───────────────────────────────────────────────────────────────

@@ -25,6 +25,8 @@ model Prospect {
   status          LeadStatus      @default(PENDING)
   scrapedAt       DateTime        @default(now())
   lastContactedAt DateTime?
+  lastEmailSentAt DateTime?
+  followUpStage   Int             @default(0) // 0=initial, 1=followup1, 2=followup2, 3=done
   notes           String?         @db.Text
 
   messages        OutreachMessage[]

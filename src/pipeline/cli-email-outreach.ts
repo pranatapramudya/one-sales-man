@@ -65,16 +65,22 @@ export async function runEmailOutreachInternal() {
       // Gunakan email yang sudah di-scrape (bukan Hunter.io)
       const emailTo = prospect.email!;
 
+      // Sanitize tags for Resend (ASCII only, no spaces/special chars)
+      const sanitizeTag = (val: string) => val.toLowerCase().replace(/[^a-z0-9_-]/g, '_').substring(0, 64);
+      const catTag = sanitizeTag(prospect.category || 'unknown');
+      const cityTag = sanitizeTag(prospect.city || 'unknown');
+      const srcTag = sanitizeTag(prospect.emailSource || 'unknown');
+
       const result = await sendEmail({
         to: emailTo,
         subject,
         html,
         text,
         tags: [
-          { name: 'category', value: prospect.category || 'unknown' },
-          { name: 'city', value: prospect.city || 'unknown' },
+          { name: 'category', value: catTag },
+          { name: 'city', value: cityTag },
           { name: 'source', value: 'cold_email' },
-          { name: 'email_src', value: prospect.emailSource || 'unknown' }, // Track source
+          { name: 'email_src', value: srcTag },
         ],
       });
 
