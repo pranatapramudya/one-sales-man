@@ -15,7 +15,16 @@
     "report": "tsx src/pipeline/export-report.ts",
     "pair": "tsx src/pipeline/cli-pair.ts",
     "cs": "tsx src/pipeline/cli-cs.ts",
-    "nightly": "tsx src/pipeline/cli-nightly-stats.ts"
+    "nightly": "tsx src/pipeline/cli-nightly-stats.ts",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "prettier --write"
+    ],
+    "*.json": [
+      "prettier --write"
+    ]
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
@@ -45,6 +54,9 @@
     "@types/ws": "^8.18.1",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.0",
+    "prettier": "^3.9.9",
     "prisma": "^7.8.0",
     "tsx": "^4.22.4",
     "typescript": "^5"
