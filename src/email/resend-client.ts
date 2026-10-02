@@ -73,7 +73,7 @@ function getBranding(category: string | null): ProductBranding {
   
   if (cat === 'HEALTHCARE') {
     return {
-      appName: 'Sadulur Care',
+      appName: 'PJTech Clinic',
       tagline: 'Sistem Manajemen Klinik & Rekam Medis Digital',
       url: 'https://pranajayatech.online',
       price: 'Rp 1.490.000/tahun',
@@ -84,7 +84,7 @@ function getBranding(category: string | null): ProductBranding {
   
   if (cat === 'WELLNESS') {
     return {
-      appName: 'Purnama Gym',
+      appName: 'PJTech Fitness',
       tagline: 'Sistem Manajemen Gym, Studio & Membership',
       url: 'https://pranajayatech.online',
       price: 'Rp 1.290.000/tahun',
