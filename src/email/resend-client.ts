@@ -63,26 +63,33 @@ interface ProductBranding {
   tagline: string;
   url: string;
   price: string;
+  hideFreeTrial: boolean;
+  waNumber: string;
 }
 
 function getBranding(category: string | null): ProductBranding {
   const cat = (category || '').toUpperCase();
+  const baseWa = '6285723256427';
   
   if (cat === 'HEALTHCARE') {
     return {
-      appName: 'PJTech Health',
+      appName: 'Sadulur Care',
       tagline: 'Sistem Manajemen Klinik & Rekam Medis Digital',
-      url: 'https://pjtechumkm.com/solusi/klinik',
-      price: 'Rp 1.490.000/tahun'
+      url: 'https://pranajayatech.online',
+      price: 'Rp 1.490.000/tahun',
+      hideFreeTrial: true,
+      waNumber: baseWa
     };
   }
   
   if (cat === 'WELLNESS') {
     return {
-      appName: 'PJTech Wellness',
+      appName: 'Purnama Gym',
       tagline: 'Sistem Manajemen Gym, Studio & Membership',
-      url: 'https://pjtechumkm.com/solusi/gym',
-      price: 'Rp 1.290.000/tahun'
+      url: 'https://pranajayatech.online',
+      price: 'Rp 1.290.000/tahun',
+      hideFreeTrial: true,
+      waNumber: baseWa
     };
   }
   
@@ -90,7 +97,9 @@ function getBranding(category: string | null): ProductBranding {
     appName: 'PJTech Kasir UMKM',
     tagline: 'Sistem Kasir Digital untuk Pengusaha Indonesia',
     url: 'https://pjtechumkm.com',
-    price: 'Rp 990.000/tahun'
+    price: 'Rp 990.000/tahun',
+    hideFreeTrial: false,
+    waNumber: baseWa
   };
 }
 
@@ -104,7 +113,7 @@ export function buildEmailTemplate(
   const subject = `Sistem ${brand.appName} untuk ${cleanName} - Mulai ${brand.price}`;
   
   // WA link dengan prefilled message
-  const waNumber = '6285723256427';
+  const waNumber = brand.waNumber;
   const waMessage = encodeURIComponent(`Halo, saya tertarik dengan ${brand.appName} untuk ${category || 'usaha saya'} (${cleanName}). Bisa info lebih detail?`);
   const waLink = `https://wa.me/${waNumber}?text=${waMessage}`;
   
@@ -140,9 +149,9 @@ export function buildEmailTemplate(
     <p>Harga transparan: <strong>${brand.price}</strong>. Tidak ada biaya tersembunyi.</p>
     
     <div style="text-align: center; margin: 30px 0;">
-      <a href="${brand.url}" style="display: inline-block; background: #3b82f6; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-right: 10px;">
+      ${brand.hideFreeTrial ? '' : `<a href="${brand.url}" style="display: inline-block; background: #3b82f6; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-right: 10px;">
         Coba Gratis 14 Hari →
-      </a>
+      </a>`}
       <a href="${waLink}" style="display: inline-block; background: #25D366; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600;">
         💬 Chat via WhatsApp
       </a>
@@ -156,7 +165,7 @@ export function buildEmailTemplate(
     
     <p style="font-size: 12px; color: #9ca3af; text-align: center;">
       Kalau email ini tidak relevan, <a href="${unsubscribeUrl}" style="color: #9ca3af;">klik di sini untuk unsubscribe</a>.<br>
-      PJTech • ${brand.tagline} • pjtechumkm.com
+      ${brand.appName} • ${brand.tagline} • ${brand.url.replace('https://', '')}
     </p>
   </div>
 </body>
@@ -183,7 +192,7 @@ Tim kami siap bantu input data awal (armada/menu/layanan/produk) gratis biar lan
 
 ---
 Kalau email ini tidak relevan, unsubscribe: ${unsubscribeUrl}
-PJTech • ${brand.tagline} • pjtechumkm.com
+${brand.appName} • ${brand.tagline} • ${brand.url.replace('https://', '')}
 `;
 
   return { subject, html, text };
@@ -265,7 +274,7 @@ export function buildFollowUp1Template(
   const brand = getBranding(category);
   const subject = `Follow-up: ${brand.appName} untuk ${cleanName} - Gratis 14 Hari`;
   
-  const waNumber = '6285723256427';
+  const waNumber = brand.waNumber;
   const waMessage = encodeURIComponent(`Halo, saya tertarik dengan ${brand.appName} untuk ${category || 'usaha saya'} (${cleanName}). Bisa info lebih detail?`);
   const waLink = `https://wa.me/${waNumber}?text=${waMessage}`;
   
@@ -294,14 +303,14 @@ export function buildFollowUp1Template(
       <ul style="margin: 0; padding-left: 20px;">
         <li>Bisa dari HP/Tablet/Laptop — tidak perlu beli mesin kasir</li>
         <li>Rekap omzet & laporan pajak otomatis real-time</li>
-        <li><strong>Coba GRATIS 14 hari</strong> (tanpa kartu kredit)</li>
+        ${brand.hideFreeTrial ? '' : '<li><strong>Coba GRATIS 14 hari</strong> (tanpa kartu kredit)</li>'}
       </ul>
     </div>
     
     <div style="text-align: center; margin: 30px 0;">
-      <a href="${brand.url}" style="display: inline-block; background: #f59e0b; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-right: 10px;">
+      ${brand.hideFreeTrial ? '' : `<a href="${brand.url}" style="display: inline-block; background: #f59e0b; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-right: 10px;">
         Coba Gratis 14 Hari →
-      </a>
+      </a>`}
       <a href="${waLink}" style="display: inline-block; background: #25D366; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600;">
         💬 Chat via WhatsApp
       </a>
@@ -315,7 +324,7 @@ export function buildFollowUp1Template(
     
     <p style="font-size: 12px; color: #9ca3af; text-align: center;">
       Kalau tidak relevan, <a href="${unsubscribeUrl}" style="color: #9ca3af;">unsubscribe di sini</a>.<br>
-      PJTech • ${brand.tagline} • pjtechumkm.com
+      ${brand.appName} • ${brand.tagline} • ${brand.url.replace('https://', '')}
     </p>
   </div>
 </body>
@@ -330,7 +339,7 @@ Mungkin email kemarin kelewat. Singkat aja:
 Kami punya sistem digital khusus ${category || 'usaha Anda'} mulai ${brand.price}.
 - Bisa dari HP/Tablet/Laptop — tidak perlu beli mesin kasir
 - Rekap omzet & laporan pajak otomatis real-time
-- Coba GRATIS 14 hari (tanpa kartu kredit)
+${brand.hideFreeTrial ? '' : '- Coba GRATIS 14 hari (tanpa kartu kredit)'}
 
 Coba gratis: https://pjtechumkm.com
 Chat WhatsApp: ${waLink}
@@ -339,7 +348,7 @@ Tim kami siap bantu input data awal GRATIS.
 
 ---
 Kalau tidak relevan, unsubscribe: ${unsubscribeUrl}
-PJTech • ${brand.tagline} • pjtechumkm.com
+${brand.appName} • ${brand.tagline} • ${brand.url.replace('https://', '')}
 `;
 
   return { subject, html, text };
@@ -354,7 +363,7 @@ export function buildFollowUp2Template(
   const brand = getBranding(category);
   const subject = `Terakhir: ${brand.appName} untuk ${cleanName} - Gratis 14 Hari`;
   
-  const waNumber = '6285723256427';
+  const waNumber = brand.waNumber;
   const waMessage = encodeURIComponent(`Halo, saya tertarik dengan ${brand.appName} untuk ${category || 'usaha saya'} (${cleanName}). Bisa info lebih detail?`);
   const waLink = `https://wa.me/${waNumber}?text=${waMessage}`;
   
@@ -376,17 +385,17 @@ export function buildFollowUp2Template(
     
     <p>Ini email terakhir dari kami soal sistem digital untuk usaha Anda.</p>
     
-    <div style="background: #fef2f2; border: 1px solid #fecaca; padding: 20px; margin: 20px 0; border-radius: 8px;">
+    ${brand.hideFreeTrial ? '' : `<div style="background: #fef2f2; border: 1px solid #fecaca; padding: 20px; margin: 20px 0; border-radius: 8px;">
       <p style="margin: 0 0 10px; color: #dc2626;"><strong>⏰ Kesempatan coba gratis 14 hari masih terbuka</strong></p>
       <p style="margin: 0; color: #991b1b;">Tanpa kartu kredit, tanpa komitmen. Cuma butuh 2 menit setup.</p>
-    </div>
+    </div>`}
     
     <p>Fitur khusus ${category || 'usaha Anda'}: ${feature}</p>
     
     <div style="text-align: center; margin: 30px 0;">
-      <a href="${brand.url}" style="display: inline-block; background: #ef4444; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-right: 10px;">
+      ${brand.hideFreeTrial ? '' : `<a href="${brand.url}" style="display: inline-block; background: #ef4444; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-right: 10px;">
         Coba Gratis 14 Hari (Terakhir) →
-      </a>
+      </a>`}
       <a href="${waLink}" style="display: inline-block; background: #25D366; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600;">
         💬 Chat via WhatsApp
       </a>
@@ -400,7 +409,7 @@ export function buildFollowUp2Template(
     
     <p style="font-size: 12px; color: #9ca3af; text-align: center;">
       <a href="${unsubscribeUrl}" style="color: #9ca3af;">Unsubscribe permanen</a>.<br>
-      PJTech • ${brand.tagline} • pjtechumkm.com
+      ${brand.appName} • ${brand.tagline} • ${brand.url.replace('https://', '')}
     </p>
   </div>
 </body>
@@ -411,7 +420,7 @@ Halo ${cleanName},
 
 Ini email terakhir dari kami soal sistem digital untuk usaha Anda.
 
-⏰ Kesempatan coba gratis 14 hari masih terbuka — tanpa kartu kredit, tanpa komitmen.
+${brand.hideFreeTrial ? '' : '⏰ Kesempatan coba gratis 14 hari masih terbuka — tanpa kartu kredit, tanpa komitmen.'}
 
 Fitur khusus ${category || 'usaha Anda'}: ${feature}
 
@@ -422,7 +431,7 @@ Kalau nanti butuh, kami tetap di sini. Tinggal balas email ini atau chat WA.
 
 ---
 Unsubscribe permanen: ${unsubscribeUrl}
-PJTech • ${brand.tagline} • pjtechumkm.com
+${brand.appName} • ${brand.tagline} • ${brand.url.replace('https://', '')}
 `;
 
   return { subject, html, text };
