@@ -55,7 +55,7 @@ export async function runEmailOutreachInternal() {
       const feature = getCategoryFeature(prospect.category);
       const unsubscribeUrl = generateUnsubscribeLink(prospect.whatsappNumber); // pakai nomor sebagai ID unik
       
-      const { subject, html, text } = buildEmailTemplate(
+      const { subject, html, text, fromName } = buildEmailTemplate(
         cleanName,
         prospect.category,
         feature,
@@ -76,6 +76,7 @@ export async function runEmailOutreachInternal() {
         subject,
         html,
         text,
+        fromName,
         tags: [
           { name: 'category', value: catTag },
           { name: 'city', value: cityTag },

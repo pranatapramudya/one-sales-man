@@ -17,6 +17,7 @@ export interface EmailTemplate {
   subject: string;
   html: string;
   text: string;
+  fromName: string;
 }
 
 export interface SendEmailParams {
@@ -25,13 +26,24 @@ export interface SendEmailParams {
   html: string;
   text?: string;
   tags?: { name: string; value: string }[];
+  fromName?: string;
 }
 
 export async function sendEmail(params: SendEmailParams): Promise<{ success: boolean; id?: string; error?: string }> {
   try {
     const resend = getResend();
+    
+    // Parse base email from env, fallback if missing
+    let baseEmail = 'prana@pjtechumkm.com';
+    const envFrom = process.env.RESEND_FROM_EMAIL || '';
+    if (envFrom.includes('<') && envFrom.includes('>')) {
+      baseEmail = envFrom.split('<')[1].split('>')[0];
+    }
+    
+    const sender = params.fromName ? `${params.fromName} <${baseEmail}>` : (process.env.RESEND_FROM_EMAIL || `PJTech <${baseEmail}>`);
+
     const { data, error } = await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || 'PJTech <prana@outreach.pjtechumkm.com>',
+      from: sender,
       to: params.to,
       subject: params.subject,
       html: params.html,
@@ -195,7 +207,7 @@ Kalau email ini tidak relevan, unsubscribe: ${unsubscribeUrl}
 ${brand.appName} • ${brand.tagline} • ${brand.url.replace('https://', '')}
 `;
 
-  return { subject, html, text };
+  return { subject, html, text, fromName: brand.appName };
 }
 
 // Category-based feature mapping (mirror from cli-outreach.ts)
@@ -351,7 +363,7 @@ Kalau tidak relevan, unsubscribe: ${unsubscribeUrl}
 ${brand.appName} • ${brand.tagline} • ${brand.url.replace('https://', '')}
 `;
 
-  return { subject, html, text };
+  return { subject, html, text, fromName: brand.appName };
 }
 
 export function buildFollowUp2Template(
@@ -434,5 +446,5 @@ Unsubscribe permanen: ${unsubscribeUrl}
 ${brand.appName} • ${brand.tagline} • ${brand.url.replace('https://', '')}
 `;
 
-  return { subject, html, text };
+  return { subject, html, text, fromName: brand.appName };
 }
