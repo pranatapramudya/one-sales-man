@@ -1,0 +1,71 @@
+◇ injected env (15) from .env // tip: ◈ encrypted .env [www.dotenvx.com]
+◇ injected env (0) from .env // tip: ⌁ auth for agents [www.vestauth.com]
+◇ injected env (0) from .env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+◇ injected env (0) from .env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+◇ injected env (0) from .env // tip: ⌘ enable debugging { debug: true }
+📊 Generating email outreach report...
+◇ injected env (0) from .env // tip: ⌘ override existing { override: true }
+â° Scheduler started. Press Ctrl+C to stop.
+✅ CSV saved: email-outreach-report-2026-10-01T12-51-49.csv
+✅ Excel saved: email-outreach-report-2026-10-01T12-51-49.xlsx
+
+📈 EMAIL OUTREACH REPORT SUMMARY
+==================================
+Total Prospek di Database: 752
+Sudah Dikontak Email (CONTACTED): 112
+Siap Email Blast Berikutnya (PENDING + Email): 1
+Belum Punya Email (Need Scrape): 639
+Status: PENDING: 640
+Status: CONTACTED: 112
+Sumber Email: website: 104
+Sumber Email: maps: 1
+Sumber Email: facebook: 8
+
+📍 TOP 5 KOTA DI-REACHOUT:
+  Bandung: 8 dikontak (100% email)
+  Bogor: 5 dikontak (100% email)
+  Depok: 5 dikontak (100% email)
+  Yogyakarta: 5 dikontak (100% email)
+  Solo: 4 dikontak (100% email)
+
+🏷️ TOP 5 KATEGORI DI-REACHOUT:
+  Bengkel AC: 11 dikontak (100% email)
+  Penyewaan Sepeda Motor: 10 dikontak (100% email)
+  Biro Perjalanan dan Wisata: 9 dikontak (100% email)
+  Bengkel Mobil: 9 dikontak (100% email)
+  Agen Sewa Mobil: 9 dikontak (100% email)
+
+📁 Files: email-outreach-report-2026-10-01T12-51-49.csv, email-outreach-report-2026-10-01T12-51-49.xlsx
+
+⏰ Scheduled report at 20:0
+📊 Generating email outreach report...
+✅ CSV saved: email-outreach-report-2026-10-01T13-00-49.csv
+✅ Excel saved: email-outreach-report-2026-10-01T13-00-49.xlsx
+
+📈 EMAIL OUTREACH REPORT SUMMARY
+==================================
+Total Prospek di Database: 752
+Sudah Dikontak Email (CONTACTED): 112
+Siap Email Blast Berikutnya (PENDING + Email): 1
+Belum Punya Email (Need Scrape): 639
+Status: PENDING: 640
+Status: CONTACTED: 112
+Sumber Email: website: 104
+Sumber Email: maps: 1
+Sumber Email: facebook: 8
+
+📍 TOP 5 KOTA DI-REACHOUT:
+  Bandung: 8 dikontak (100% email)
+  Bogor: 5 dikontak (100% email)
+  Depok: 5 dikontak (100% email)
+  Yogyakarta: 5 dikontak (100% email)
+  Solo: 4 dikontak (100% email)
+
+🏷️ TOP 5 KATEGORI DI-REACHOUT:
+  Bengkel AC: 11 dikontak (100% email)
+  Penyewaan Sepeda Motor: 10 dikontak (100% email)
+  Biro Perjalanan dan Wisata: 9 dikontak (100% email)
+  Bengkel Mobil: 9 dikontak (100% email)
+  Agen Sewa Mobil: 9 dikontak (100% email)
+
+📁 Files: email-outreach-report-2026-10-01T13-00-49.csv, email-outreach-report-2026-10-01T13-00-49.xlsx

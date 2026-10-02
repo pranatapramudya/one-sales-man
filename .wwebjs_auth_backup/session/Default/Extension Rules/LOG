@@ -1,2 +1,3 @@
-2026/09/20-08:02:07.263 2e04 Creating DB D:\Coding\one-sales-man\.wwebjs_auth\session\Default\Extension Rules since it was missing.
-2026/09/20-08:02:07.829 2e04 Reusing MANIFEST D:\Coding\one-sales-man\.wwebjs_auth\session\Default\Extension Rules/MANIFEST-000001
+2026/09/28-22:51:38.189 984 Reusing MANIFEST D:\Coding\one-sales-man\.wwebjs_auth\session\Default\Extension Rules/MANIFEST-000001
+2026/09/28-22:51:38.236 984 Recovering log #3
+2026/09/28-22:51:38.236 984 Reusing old log D:\Coding\one-sales-man\.wwebjs_auth\session\Default\Extension Rules/000003.log 

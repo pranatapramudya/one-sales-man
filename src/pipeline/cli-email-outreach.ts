@@ -1,4 +1,4 @@
-import path from 'path';
+﻿import path from 'path';
 import dotenv from 'dotenv';
 
 // Load .env from one-sales-man root
@@ -13,12 +13,12 @@ import {
   generateUnsubscribeLink 
 } from '../email/resend-client';
 
-// ─── CONFIG ────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ CONFIG â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const DAILY_LIMIT = parseInt(process.env.EMAIL_DAILY_LIMIT || '50');
 const DELAY_MS = parseInt(process.env.EMAIL_DELAY_MS || '5000'); // 5 detik antar kirim
 
 export async function runEmailOutreachInternal() {
-  console.log('🚀 Starting EMAIL OUTREACH job...');
+  console.log('ðŸš€ Starting EMAIL OUTREACH job...');
   console.log(`Daily limit: ${DAILY_LIMIT} emails`);
   
   // 1. Ambil prospek yang status PENDING dan PUNYA EMAIL (dari scraping)
@@ -32,18 +32,18 @@ export async function runEmailOutreachInternal() {
   });
 
   if (prospects.length === 0) {
-    console.log('✅ Tidak ada prospek PENDING dengan email untuk dikirim.');
+    console.log('âœ… Tidak ada prospek PENDING dengan email untuk dikirim.');
     return;
   }
 
-  console.log(`📋 Ditemukan ${prospects.length} prospek dengan email untuk outreach.`);
+  console.log(`ðŸ“‹ Ditemukan ${prospects.length} prospek dengan email untuk outreach.`);
   
   // Stats by email source
   const sourceStats = prospects.reduce((acc, p) => {
     acc[p.emailSource || 'unknown'] = (acc[p.emailSource || 'unknown'] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
-  console.log(`📊 Email sources:`, sourceStats);
+  console.log(`ðŸ“Š Email sources:`, sourceStats);
 
   let sent = 0;
   let failed = 0;
@@ -95,34 +95,34 @@ export async function runEmailOutreachInternal() {
             notes: `Email sent: ${result.id} (src: ${prospect.emailSource})`,
           },
         });
-        console.log(`✅ [${sent}/${prospects.length}] Email sent to ${prospect.businessName} (${emailTo}) [src: ${prospect.emailSource}]`);
+        console.log(`âœ… [${sent}/${prospects.length}] Email sent to ${prospect.businessName} (${emailTo}) [src: ${prospect.emailSource}]`);
       } else {
         failed++;
-        console.error(`❌ Failed to send to ${prospect.businessName} (${emailTo}): ${result.error}`);
+        console.error(`âŒ Failed to send to ${prospect.businessName} (${emailTo}): ${result.error}`);
       }
 
       // Delay antar kirim (randomized untuk anti-detection)
       if (i < prospects.length - 1) {
         const delay = Math.random() * 3000 + DELAY_MS; // 5-8 detik random
-        console.log(`⏳ Waiting ${Math.round(delay/1000)}s...`);
+        console.log(`â³ Waiting ${Math.round(delay/1000)}s...`);
         await new Promise(r => setTimeout(r, delay));
       }
 
     } catch (err: any) {
       failed++;
-      console.error(`❌ Error processing ${prospect.businessName}:`, err.message);
+      console.error(`âŒ Error processing ${prospect.businessName}:`, err.message);
     }
   }
 
-  console.log('\n📊 EMAIL OUTREACH SUMMARY');
-  console.log(`✅ Sent: ${sent}`);
-  console.log(`❌ Failed: ${failed}`);
-  console.log(`📋 Total processed: ${prospects.length}`);
+  console.log('\nðŸ“Š EMAIL OUTREACH SUMMARY');
+  console.log(`âœ… Sent: ${sent}`);
+  console.log(`âŒ Failed: ${failed}`);
+  console.log(`ðŸ“‹ Total processed: ${prospects.length}`);
 }
 
 // Follow-up scheduler (untuk nanti bisa dijalankan via cron)
 async function scheduleFollowUps() {
-  console.log('🔄 Checking for follow-up emails...');
+  console.log('ðŸ”„ Checking for follow-up emails...');
   
   // Cari prospek CONTACTED > 3 hari tanpa balasan -> kirim follow-up 1
   // Cari prospek CONTACTED > 7 hari tanpa balasan -> kirim follow-up 2
@@ -137,7 +137,18 @@ export async function runEmailOutreach() {
   await runEmailOutreachInternal();
   await scheduleFollowUps();
   await prisma.$disconnect();
-  process.exit(0);
 }
 
-runEmailOutreach().catch(console.error);
+const isDirectRun = process.argv[1] && (
+  process.argv[1].endsWith('cli-email-outreach.ts') ||
+  process.argv[1].endsWith('cli-email-outreach.js')
+);
+
+if (isDirectRun) {
+  runEmailOutreach()
+    .then(() => process.exit(0))
+    .catch((err) => {
+      console.error(err);
+      process.exit(1);
+    });
+}

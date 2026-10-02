@@ -15,25 +15,38 @@ interface VerticalConfig {
 }
 
 const VERTICALS: VerticalConfig[] = [
-  // PRIORITAS 1: Healthcare & Clinic (Target: sadulur-care / Rekam Medis) - Paling Elit & Pasti Punya Email
+  // PRIORITAS 1: Healthcare & Clinic (Target: sadulur-care / Rekam Medis)
   { keyword: 'klinik gigi', category: 'HEALTHCARE', priority: 1, cities: [] },
   { keyword: 'klinik kecantikan', category: 'HEALTHCARE', priority: 1, cities: [] },
   { keyword: 'apotek', category: 'HEALTHCARE', priority: 1, cities: [] },
   { keyword: 'klinik dokter hewan', category: 'HEALTHCARE', priority: 1, cities: [] },
   
-  // PRIORITAS 2: Hospitality & Premium Property (Target: Rental/Booking POS) - Margin Tinggi
+  // PRIORITAS 2: Hospitality & Premium Rental (Target: kasir-umkm Mode Rental/Booking)
   { keyword: 'boutique hotel', category: 'PROPERTY', priority: 2, cities: [] },
   { keyword: 'villa resort', category: 'PROPERTY', priority: 2, cities: [] },
   { keyword: 'coworking space', category: 'PROPERTY', priority: 2, cities: [] },
+  { keyword: 'rental kamera', category: 'RENTAL', priority: 2, cities: [] },
+  { keyword: 'sewa alat berat', category: 'RENTAL', priority: 2, cities: [] },
   
-  // PRIORITAS 3: Fitness & Wellness (Target: purnama-gym) - Recurring Revenue
-  { keyword: 'fitness center', category: 'WELLNESS', priority: 3, cities: [] },
-  { keyword: 'studio yoga', category: 'WELLNESS', priority: 3, cities: [] },
+  // PRIORITAS 3: Premium Services / Jasa (Target: kasir-umkm Mode Servis/Antrian)
+  { keyword: 'car detailing', category: 'SERVICE', priority: 3, cities: [] },
+  { keyword: 'spa massage', category: 'SERVICE', priority: 3, cities: [] },
+  { keyword: 'barbershop premium', category: 'SERVICE', priority: 3, cities: [] },
+  { keyword: 'wedding organizer', category: 'SERVICE', priority: 3, cities: [] },
+
+  // PRIORITAS 4: Fitness & Wellness (Target: purnama-gym)
+  { keyword: 'fitness center', category: 'WELLNESS', priority: 4, cities: [] },
+  { keyword: 'studio yoga', category: 'WELLNESS', priority: 4, cities: [] },
   
-  // PRIORITAS 4: Modern Retail & Tech (Target: kasir-umkm) - Digital Savvy
-  { keyword: 'toko komputer', category: 'RETAIL', priority: 4, cities: [] },
-  { keyword: 'vape store', category: 'RETAIL', priority: 4, cities: [] },
-  { keyword: 'coffee shop roastery', category: 'FNB', priority: 4, cities: [] },
+  // PRIORITAS 5: Premium F&B (Target: kasir-umkm Mode F&B - Meja & KDS)
+  { keyword: 'fine dining restaurant', category: 'FNB', priority: 5, cities: [] },
+  { keyword: 'coffee shop roastery', category: 'FNB', priority: 5, cities: [] },
+  { keyword: 'steakhouse', category: 'FNB', priority: 5, cities: [] },
+
+  // PRIORITAS 6: Modern Retail & Tech (Target: kasir-umkm Mode Retail)
+  { keyword: 'toko komputer', category: 'RETAIL', priority: 6, cities: [] },
+  { keyword: 'vape store', category: 'RETAIL', priority: 6, cities: [] },
+  { keyword: 'toko kamera', category: 'RETAIL', priority: 6, cities: [] },
 ];
 
 // â”€â”€â”€ EKSPANSI GEOGRAFIS (DARI SUMEDANG KE SELURUH INDONESIA) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

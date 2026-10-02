@@ -1,2 +1,3 @@
-2026/09/20-08:02:08.105 2e04 Creating DB D:\Coding\one-sales-man\.wwebjs_auth\session\Default\Extension Scripts since it was missing.
-2026/09/20-08:02:08.529 2e04 Reusing MANIFEST D:\Coding\one-sales-man\.wwebjs_auth\session\Default\Extension Scripts/MANIFEST-000001
+2026/09/28-22:51:38.251 984 Reusing MANIFEST D:\Coding\one-sales-man\.wwebjs_auth\session\Default\Extension Scripts/MANIFEST-000001
+2026/09/28-22:51:38.251 984 Recovering log #3
+2026/09/28-22:51:38.251 984 Reusing old log D:\Coding\one-sales-man\.wwebjs_auth\session\Default\Extension Scripts/000003.log 
