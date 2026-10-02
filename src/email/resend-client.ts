@@ -88,7 +88,7 @@ function getBranding(category: string | null): ProductBranding {
       appName: 'PJTech Clinic',
       tagline: 'Sistem Manajemen Klinik & Rekam Medis Digital',
       url: 'https://pranajayatech.online',
-      price: 'Rp 1.490.000/tahun',
+      price: 'Rp 2.990.000/tahun',
       hideFreeTrial: true,
       waNumber: baseWa
     };
@@ -99,7 +99,7 @@ function getBranding(category: string | null): ProductBranding {
       appName: 'PJTech Fitness',
       tagline: 'Sistem Manajemen Gym, Studio & Membership',
       url: 'https://pranajayatech.online',
-      price: 'Rp 1.290.000/tahun',
+      price: 'Rp 1.990.000/tahun',
       hideFreeTrial: true,
       waNumber: baseWa
     };
