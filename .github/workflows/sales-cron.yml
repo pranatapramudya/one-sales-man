@@ -1,0 +1,50 @@
+name: Sales Outreach Cron
+
+on:
+  schedule:
+    # Jam 10:00 WIB = 03:00 UTC
+    - cron: '0 3 * * *'
+    # Jam 20:00 WIB = 13:00 UTC
+    - cron: '0 13 * * *'
+  workflow_dispatch:  # Bisa dijalankan manual dari tab Actions
+
+jobs:
+  email-outreach:
+    name: Email Outreach (Scrape + Send + Follow-up)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      EMAIL_DAILY_LIMIT: "50"
+      EMAIL_DELAY_MS: "5000"
+      NODE_ENV: "production"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: Run Email Outreach Pipeline
+        run: npx tsx src/pipeline/cli-email-outreach.ts
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: outreach-logs
+          path: |
+            *.log
+            logs/
+          retention-days: 7
