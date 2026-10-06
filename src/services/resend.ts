@@ -1,12 +1,15 @@
-import { Resend } from 'resend';
+import { Resend } from "resend";
+import { config, validateEnv } from "../config/env";
 
-// Lazy-loaded Resend client to allow dotenv.config() to run first
+// Validasi config utama
+validateEnv();
+
 let _resend: Resend | null = null;
 function getResend(): Resend {
   if (!_resend) {
-    const apiKey = process.env.RESEND_API_KEY;
+    const apiKey = config.resend.apiKey;
     if (!apiKey) {
-      throw new Error('RESEND_API_KEY not set in environment');
+      throw new Error("RESEND_API_KEY not set in environment");
     }
     _resend = new Resend(apiKey);
   }
@@ -29,18 +32,22 @@ export interface SendEmailParams {
   fromName?: string;
 }
 
-export async function sendEmail(params: SendEmailParams): Promise<{ success: boolean; id?: string; error?: string }> {
+export async function sendEmail(
+  params: SendEmailParams,
+): Promise<{ success: boolean; id?: string; error?: string }> {
   try {
     const resend = getResend();
-    
+
     // Parse base email from env, fallback if missing
-    let baseEmail = 'prana@pjtechumkm.com';
-    const envFrom = process.env.RESEND_FROM_EMAIL || '';
-    if (envFrom.includes('<') && envFrom.includes('>')) {
-      baseEmail = envFrom.split('<')[1].split('>')[0];
+    let baseEmail = "prana@pjtechumkm.com";
+    const envFrom = config.resend.fromEmail;
+    if (envFrom.includes("<") && envFrom.includes(">")) {
+      baseEmail = envFrom.split("<")[1].split(">")[0];
     }
-    
-    const sender = params.fromName ? `${params.fromName} <${baseEmail}>` : (process.env.RESEND_FROM_EMAIL || `PJTech <${baseEmail}>`);
+
+    const sender = params.fromName
+      ? `${params.fromName} <${baseEmail}>`
+      : config.resend.fromEmail || `PJTech <${baseEmail}>`;
 
     const { data, error } = await resend.emails.send({
       from: sender,
@@ -52,22 +59,21 @@ export async function sendEmail(params: SendEmailParams): Promise<{ success: boo
     });
 
     if (error) {
-      console.error('Resend error:', error);
+      console.error("Resend error:", error);
       return { success: false, error: error.message };
     }
 
     return { success: true, id: data?.id };
   } catch (err: any) {
-    console.error('Send email exception:', err);
+    console.error("Send email exception:", err);
     return { success: false, error: err.message };
   }
 }
 
 export function generateUnsubscribeLink(email: string): string {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://pjtechumkm.com';
+  const baseUrl = config.resend.appUrl;
   return `${baseUrl}/unsubscribe?email=${encodeURIComponent(email)}`;
 }
-
 
 // ─── BRANDING HELPER ────────────────────────────────────────────────────────
 interface ProductBranding {
@@ -80,38 +86,38 @@ interface ProductBranding {
 }
 
 function getBranding(category: string | null): ProductBranding {
-  const cat = (category || '').toUpperCase();
-  const baseWa = '6285723256427';
-  
-  if (cat === 'HEALTHCARE') {
+  const cat = (category || "").toUpperCase();
+  const baseWa = "6285723256427";
+
+  if (cat === "HEALTHCARE") {
     return {
-      appName: 'PJTech Clinic',
-      tagline: 'Sistem Manajemen Klinik & Rekam Medis Digital',
-      url: 'https://pranajayatech.online',
-      price: 'Rp 2.990.000/tahun',
+      appName: "PJTech Clinic",
+      tagline: "Sistem Manajemen Klinik & Rekam Medis Digital",
+      url: "https://pranajayatech.online",
+      price: "Rp 2.990.000/tahun",
       hideFreeTrial: true,
-      waNumber: baseWa
+      waNumber: baseWa,
     };
   }
-  
-  if (cat === 'WELLNESS') {
+
+  if (cat === "WELLNESS") {
     return {
-      appName: 'PJTech Fitness',
-      tagline: 'Sistem Manajemen Gym, Studio & Membership',
-      url: 'https://pranajayatech.online',
-      price: 'Rp 1.990.000/tahun',
+      appName: "PJTech Fitness",
+      tagline: "Sistem Manajemen Gym, Studio & Membership",
+      url: "https://pranajayatech.online",
+      price: "Rp 1.990.000/tahun",
       hideFreeTrial: true,
-      waNumber: baseWa
+      waNumber: baseWa,
     };
   }
-  
+
   return {
-    appName: 'PJTech Kasir UMKM',
-    tagline: 'Sistem Kasir Digital untuk Pengusaha Indonesia',
-    url: 'https://pjtechumkm.com',
-    price: 'Rp 990.000/tahun',
+    appName: "PJTech Kasir UMKM",
+    tagline: "Sistem Kasir Digital untuk Pengusaha Indonesia",
+    url: "https://pjtechumkm.com",
+    price: "Rp 990.000/tahun",
     hideFreeTrial: false,
-    waNumber: baseWa
+    waNumber: baseWa,
   };
 }
 
@@ -119,16 +125,18 @@ export function buildEmailTemplate(
   cleanName: string,
   category: string | null,
   feature: string,
-  unsubscribeUrl: string
+  unsubscribeUrl: string,
 ): EmailTemplate {
   const brand = getBranding(category);
   const subject = `Sistem ${brand.appName} untuk ${cleanName} - Mulai ${brand.price}`;
-  
+
   // WA link dengan prefilled message
   const waNumber = brand.waNumber;
-  const waMessage = encodeURIComponent(`Halo, saya tertarik dengan ${brand.appName} untuk ${category || 'usaha saya'} (${cleanName}). Bisa info lebih detail?`);
+  const waMessage = encodeURIComponent(
+    `Halo, saya tertarik dengan ${brand.appName} untuk ${category || "usaha saya"} (${cleanName}). Bisa info lebih detail?`,
+  );
   const waLink = `https://wa.me/${waNumber}?text=${waMessage}`;
-  
+
   const html = `
 <!DOCTYPE html>
 <html>
@@ -150,20 +158,24 @@ export function buildEmailTemplate(
     <p>Izin tanya, untuk <strong>${feature}</strong> saat ini sudah pakai sistem kasir otomatis atau masih manual catat di buku/WA?</p>
     
     <div style="background: white; border-left: 4px solid #3b82f6; padding: 20px; margin: 20px 0; border-radius: 0 8px 8px 0;">
-      <p style="margin: 0 0 10px;"><strong>Kebetulan kami punya sistem digital khusus ${category || 'usaha Anda'}:</strong></p>
+      <p style="margin: 0 0 10px;"><strong>Kebetulan kami punya sistem digital khusus ${category || "usaha Anda"}:</strong></p>
       <ul style="margin: 0; padding-left: 20px;">
         <li>Bisa dibuka dari HP, tablet, maupun laptop (tanpa beli mesin kasir mahal)</li>
         <li>Rekap omzet & laporan pajak otomatis real-time</li>
-        <li>Cocok untuk ${category || 'berbagai jenis usaha'} seperti usaha Anda</li>
+        <li>Cocok untuk ${category || "berbagai jenis usaha"} seperti usaha Anda</li>
       </ul>
     </div>
     
     <p>Harga transparan: <strong>${brand.price}</strong>. Tidak ada biaya tersembunyi.</p>
     
     <div style="text-align: center; margin: 30px 0;">
-      ${brand.hideFreeTrial ? '' : `<a href="${brand.url}" style="display: inline-block; background: #3b82f6; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-right: 10px;">
+      ${
+        brand.hideFreeTrial
+          ? ""
+          : `<a href="${brand.url}" style="display: inline-block; background: #3b82f6; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-right: 10px;">
         Coba Gratis 14 Hari →
-      </a>`}
+      </a>`
+      }
       <a href="${waLink}" style="display: inline-block; background: #25D366; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600;">
         💬 Chat via WhatsApp
       </a>
@@ -177,7 +189,7 @@ export function buildEmailTemplate(
     
     <p style="font-size: 12px; color: #9ca3af; text-align: center;">
       Kalau email ini tidak relevan, <a href="${unsubscribeUrl}" style="color: #9ca3af;">klik di sini untuk unsubscribe</a>.<br>
-      ${brand.appName} • ${brand.tagline} • ${brand.url.replace('https://', '')}
+      ${brand.appName} • ${brand.tagline} • ${brand.url.replace("https://", "")}
     </p>
   </div>
 </body>
@@ -190,10 +202,10 @@ Salam kenal dari tim PJTech 🙏
 
 Izin tanya, untuk ${feature} saat ini sudah pakai sistem kasir otomatis atau masih manual catat di buku/WA?
 
-Kebetulan kami punya sistem digital khusus ${category || 'usaha Anda'}:
+Kebetulan kami punya sistem digital khusus ${category || "usaha Anda"}:
 - Bisa dibuka dari HP, tablet, maupun laptop (tanpa beli mesin kasir mahal)
 - Rekap omzet & laporan pajak otomatis real-time
-- Cocok untuk ${category || 'berbagai jenis usaha'} seperti usaha Anda
+- Cocok untuk ${category || "berbagai jenis usaha"} seperti usaha Anda
 
 Harga transparan: Rp 990.000/tahun (Rp 82.500/bulan). Tidak ada biaya tersembunyi.
 
@@ -204,7 +216,7 @@ Tim kami siap bantu input data awal (armada/menu/layanan/produk) gratis biar lan
 
 ---
 Kalau email ini tidak relevan, unsubscribe: ${unsubscribeUrl}
-${brand.appName} • ${brand.tagline} • ${brand.url.replace('https://', '')}
+${brand.appName} • ${brand.tagline} • ${brand.url.replace("https://", "")}
 `;
 
   return { subject, html, text, fromName: brand.appName };
@@ -212,67 +224,112 @@ ${brand.appName} • ${brand.tagline} • ${brand.url.replace('https://', '')}
 
 // Category-based feature mapping (mirror from cli-outreach.ts)
 export function getCategoryFeature(category: string | null): string {
-  const cat = (category || '').toLowerCase();
+  const cat = (category || "").toLowerCase();
 
   if (
-    cat.includes('retail') || cat.includes('toko') || cat.includes('mart') || 
-    cat.includes('sembako') || cat.includes('grosir') || cat.includes('minimarket') || 
-    cat.includes('warung') || cat.includes('butik') || cat.includes('fashion') || 
-    cat.includes('distro') || cat.includes('elektronik') || cat.includes('atk') || 
-    cat.includes('baju') || cat.includes('pakaian')
+    cat.includes("retail") ||
+    cat.includes("toko") ||
+    cat.includes("mart") ||
+    cat.includes("sembako") ||
+    cat.includes("grosir") ||
+    cat.includes("minimarket") ||
+    cat.includes("warung") ||
+    cat.includes("butik") ||
+    cat.includes("fashion") ||
+    cat.includes("distro") ||
+    cat.includes("elektronik") ||
+    cat.includes("atk") ||
+    cat.includes("baju") ||
+    cat.includes("pakaian")
   ) {
-    return 'catat stok barang dan rekap penjualan harian';
+    return "catat stok barang dan rekap penjualan harian";
   }
 
   if (
-    cat.includes('kafe') || cat.includes('cafe') || cat.includes('kopi') || 
-    cat.includes('resto') || cat.includes('makan') || cat.includes('f&b') || 
-    cat.includes('fnb') || cat.includes('kuliner') || cat.includes('bakery') || 
-    cat.includes('roti') || cat.includes('kedai') || cat.includes('kitchen')
+    cat.includes("kafe") ||
+    cat.includes("cafe") ||
+    cat.includes("kopi") ||
+    cat.includes("resto") ||
+    cat.includes("makan") ||
+    cat.includes("f&b") ||
+    cat.includes("fnb") ||
+    cat.includes("kuliner") ||
+    cat.includes("bakery") ||
+    cat.includes("roti") ||
+    cat.includes("kedai") ||
+    cat.includes("kitchen")
   ) {
-    return 'rekap orderan meja dan cetak struk dapur';
+    return "rekap orderan meja dan cetak struk dapur";
   }
 
   if (
-    cat.includes('jasa') || cat.includes('servis') || cat.includes('service') || 
-    cat.includes('salon') || cat.includes('barber') || cat.includes('cukur') || 
-    cat.includes('bengkel') || cat.includes('spa') || cat.includes('klinik') || 
-    cat.includes('dokter') || cat.includes('apotek') || cat.includes('gym') || 
-    cat.includes('fitness') || cat.includes('cuci') || cat.includes('laundry') || 
-    cat.includes('refleksi')
+    cat.includes("jasa") ||
+    cat.includes("servis") ||
+    cat.includes("service") ||
+    cat.includes("salon") ||
+    cat.includes("barber") ||
+    cat.includes("cukur") ||
+    cat.includes("bengkel") ||
+    cat.includes("spa") ||
+    cat.includes("klinik") ||
+    cat.includes("dokter") ||
+    cat.includes("apotek") ||
+    cat.includes("gym") ||
+    cat.includes("fitness") ||
+    cat.includes("cuci") ||
+    cat.includes("laundry") ||
+    cat.includes("refleksi")
   ) {
-    return 'hitung komisi kapster/teknisi dan rekap omzet';
+    return "hitung komisi kapster/teknisi dan rekap omzet";
   }
 
   if (
-    cat.includes('rental') || cat.includes('sewa') || cat.includes('kos') || 
-    cat.includes('kost') || cat.includes('mobil') || cat.includes('motor') || 
-    cat.includes('travel') || cat.includes('tour') || cat.includes('property') || 
-    cat.includes('properti') || cat.includes('penginapan') || cat.includes('homestay') || 
-    cat.includes('villa') || cat.includes('hotel') || cat.includes('pantai') || 
-    cat.includes('resort') || cat.includes('cottage') || cat.includes('glamping') || 
-    cat.includes('lapangan') || cat.includes('futsal') || cat.includes('badminton') || 
-    cat.includes('studio') || cat.includes('ruang')
+    cat.includes("rental") ||
+    cat.includes("sewa") ||
+    cat.includes("kos") ||
+    cat.includes("kost") ||
+    cat.includes("mobil") ||
+    cat.includes("motor") ||
+    cat.includes("travel") ||
+    cat.includes("tour") ||
+    cat.includes("property") ||
+    cat.includes("properti") ||
+    cat.includes("penginapan") ||
+    cat.includes("homestay") ||
+    cat.includes("villa") ||
+    cat.includes("hotel") ||
+    cat.includes("pantai") ||
+    cat.includes("resort") ||
+    cat.includes("cottage") ||
+    cat.includes("glamping") ||
+    cat.includes("lapangan") ||
+    cat.includes("futsal") ||
+    cat.includes("badminton") ||
+    cat.includes("studio") ||
+    cat.includes("ruang")
   ) {
-    return 'catat jadwal sewa unit/kamar per jam atau per hari, deposit, dan kuitansi otomatis';
+    return "catat jadwal sewa unit/kamar per jam atau per hari, deposit, dan kuitansi otomatis";
   }
 
-  return 'catat transaksi kasir dan rekap omzet harian';
+  return "catat transaksi kasir dan rekap omzet harian";
 }
 
 export function sanitizeBusinessName(rawName: string): string {
-  if (!rawName) return 'Kak';
+  if (!rawName) return "Kak";
   let name = rawName;
-  name = name.replace(/\(.*?\)/g, '');
-  name = name.replace(/\[.*?\]/g, '');
+  name = name.replace(/\(.*?\)/g, "");
+  name = name.replace(/\[.*?\]/g, "");
   name = name.split(/[-|/]/)[0];
-  name = name.replace(/\b(PT|CV|UD|PD)\.?\s+/gi, '');
-  name = name.replace(/\b(buka\s+24\s+jam|24\s+jam|cabang\s+\w+|spesialis\s+[\w\s]+)/gi, '');
-  name = name.split(',')[0];
-  name = name.replace(/\s+/g, ' ').trim();
-  const words = name.split(' ');
-  if (words.length > 4) name = words.slice(0, 4).join(' ');
-  name = name.replace(/[\s&,\-|/]+$/, '').trim();
+  name = name.replace(/\b(PT|CV|UD|PD)\.?\s+/gi, "");
+  name = name.replace(
+    /\b(buka\s+24\s+jam|24\s+jam|cabang\s+\w+|spesialis\s+[\w\s]+)/gi,
+    "",
+  );
+  name = name.split(",")[0];
+  name = name.replace(/\s+/g, " ").trim();
+  const words = name.split(" ");
+  if (words.length > 4) name = words.slice(0, 4).join(" ");
+  name = name.replace(/[\s&,\-|/]+$/, "").trim();
   return name || rawName;
 }
 
@@ -281,15 +338,17 @@ export function buildFollowUp1Template(
   cleanName: string,
   category: string | null,
   feature: string,
-  unsubscribeUrl: string
+  unsubscribeUrl: string,
 ): EmailTemplate {
   const brand = getBranding(category);
   const subject = `Follow-up: ${brand.appName} untuk ${cleanName} - Gratis 14 Hari`;
-  
+
   const waNumber = brand.waNumber;
-  const waMessage = encodeURIComponent(`Halo, saya tertarik dengan ${brand.appName} untuk ${category || 'usaha saya'} (${cleanName}). Bisa info lebih detail?`);
+  const waMessage = encodeURIComponent(
+    `Halo, saya tertarik dengan ${brand.appName} untuk ${category || "usaha saya"} (${cleanName}). Bisa info lebih detail?`,
+  );
   const waLink = `https://wa.me/${waNumber}?text=${waMessage}`;
-  
+
   const html = `
 <!DOCTYPE html>
 <html>
@@ -311,18 +370,22 @@ export function buildFollowUp1Template(
     <p>Mungkin email kemarin kelewat atau belum sempat dibuka. Saya coba kirim lagi singkat:</p>
     
     <div style="background: white; border-left: 4px solid #f59e0b; padding: 20px; margin: 20px 0; border-radius: 0 8px 8px 0;">
-      <p style="margin: 0 0 10px;"><strong>Kami punya sistem digital khusus ${category || 'usaha Anda'} mulai ${brand.price}:</strong></p>
+      <p style="margin: 0 0 10px;"><strong>Kami punya sistem digital khusus ${category || "usaha Anda"} mulai ${brand.price}:</strong></p>
       <ul style="margin: 0; padding-left: 20px;">
         <li>Bisa dari HP/Tablet/Laptop — tidak perlu beli mesin kasir</li>
         <li>Rekap omzet & laporan pajak otomatis real-time</li>
-        ${brand.hideFreeTrial ? '' : '<li><strong>Coba GRATIS 14 hari</strong> (tanpa kartu kredit)</li>'}
+        ${brand.hideFreeTrial ? "" : "<li><strong>Coba GRATIS 14 hari</strong> (tanpa kartu kredit)</li>"}
       </ul>
     </div>
     
     <div style="text-align: center; margin: 30px 0;">
-      ${brand.hideFreeTrial ? '' : `<a href="${brand.url}" style="display: inline-block; background: #f59e0b; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-right: 10px;">
+      ${
+        brand.hideFreeTrial
+          ? ""
+          : `<a href="${brand.url}" style="display: inline-block; background: #f59e0b; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-right: 10px;">
         Coba Gratis 14 Hari →
-      </a>`}
+      </a>`
+      }
       <a href="${waLink}" style="display: inline-block; background: #25D366; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600;">
         💬 Chat via WhatsApp
       </a>
@@ -336,7 +399,7 @@ export function buildFollowUp1Template(
     
     <p style="font-size: 12px; color: #9ca3af; text-align: center;">
       Kalau tidak relevan, <a href="${unsubscribeUrl}" style="color: #9ca3af;">unsubscribe di sini</a>.<br>
-      ${brand.appName} • ${brand.tagline} • ${brand.url.replace('https://', '')}
+      ${brand.appName} • ${brand.tagline} • ${brand.url.replace("https://", "")}
     </p>
   </div>
 </body>
@@ -348,10 +411,10 @@ Halo ${cleanName},
 Follow-up email sebelumnya 🙏
 
 Mungkin email kemarin kelewat. Singkat aja:
-Kami punya sistem digital khusus ${category || 'usaha Anda'} mulai ${brand.price}.
+Kami punya sistem digital khusus ${category || "usaha Anda"} mulai ${brand.price}.
 - Bisa dari HP/Tablet/Laptop — tidak perlu beli mesin kasir
 - Rekap omzet & laporan pajak otomatis real-time
-${brand.hideFreeTrial ? '' : '- Coba GRATIS 14 hari (tanpa kartu kredit)'}
+${brand.hideFreeTrial ? "" : "- Coba GRATIS 14 hari (tanpa kartu kredit)"}
 
 Coba gratis: https://pjtechumkm.com
 Chat WhatsApp: ${waLink}
@@ -360,7 +423,7 @@ Tim kami siap bantu input data awal GRATIS.
 
 ---
 Kalau tidak relevan, unsubscribe: ${unsubscribeUrl}
-${brand.appName} • ${brand.tagline} • ${brand.url.replace('https://', '')}
+${brand.appName} • ${brand.tagline} • ${brand.url.replace("https://", "")}
 `;
 
   return { subject, html, text, fromName: brand.appName };
@@ -370,15 +433,17 @@ export function buildFollowUp2Template(
   cleanName: string,
   category: string | null,
   feature: string,
-  unsubscribeUrl: string
+  unsubscribeUrl: string,
 ): EmailTemplate {
   const brand = getBranding(category);
   const subject = `Terakhir: ${brand.appName} untuk ${cleanName} - Gratis 14 Hari`;
-  
+
   const waNumber = brand.waNumber;
-  const waMessage = encodeURIComponent(`Halo, saya tertarik dengan ${brand.appName} untuk ${category || 'usaha saya'} (${cleanName}). Bisa info lebih detail?`);
+  const waMessage = encodeURIComponent(
+    `Halo, saya tertarik dengan ${brand.appName} untuk ${category || "usaha saya"} (${cleanName}). Bisa info lebih detail?`,
+  );
   const waLink = `https://wa.me/${waNumber}?text=${waMessage}`;
-  
+
   const html = `
 <!DOCTYPE html>
 <html>
@@ -397,17 +462,25 @@ export function buildFollowUp2Template(
     
     <p>Ini email terakhir dari kami soal sistem digital untuk usaha Anda.</p>
     
-    ${brand.hideFreeTrial ? '' : `<div style="background: #fef2f2; border: 1px solid #fecaca; padding: 20px; margin: 20px 0; border-radius: 8px;">
+    ${
+      brand.hideFreeTrial
+        ? ""
+        : `<div style="background: #fef2f2; border: 1px solid #fecaca; padding: 20px; margin: 20px 0; border-radius: 8px;">
       <p style="margin: 0 0 10px; color: #dc2626;"><strong>⏰ Kesempatan coba gratis 14 hari masih terbuka</strong></p>
       <p style="margin: 0; color: #991b1b;">Tanpa kartu kredit, tanpa komitmen. Cuma butuh 2 menit setup.</p>
-    </div>`}
+    </div>`
+    }
     
-    <p>Fitur khusus ${category || 'usaha Anda'}: ${feature}</p>
+    <p>Fitur khusus ${category || "usaha Anda"}: ${feature}</p>
     
     <div style="text-align: center; margin: 30px 0;">
-      ${brand.hideFreeTrial ? '' : `<a href="${brand.url}" style="display: inline-block; background: #ef4444; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-right: 10px;">
+      ${
+        brand.hideFreeTrial
+          ? ""
+          : `<a href="${brand.url}" style="display: inline-block; background: #ef4444; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-right: 10px;">
         Coba Gratis 14 Hari (Terakhir) →
-      </a>`}
+      </a>`
+      }
       <a href="${waLink}" style="display: inline-block; background: #25D366; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600;">
         💬 Chat via WhatsApp
       </a>
@@ -421,7 +494,7 @@ export function buildFollowUp2Template(
     
     <p style="font-size: 12px; color: #9ca3af; text-align: center;">
       <a href="${unsubscribeUrl}" style="color: #9ca3af;">Unsubscribe permanen</a>.<br>
-      ${brand.appName} • ${brand.tagline} • ${brand.url.replace('https://', '')}
+      ${brand.appName} • ${brand.tagline} • ${brand.url.replace("https://", "")}
     </p>
   </div>
 </body>
@@ -432,9 +505,9 @@ Halo ${cleanName},
 
 Ini email terakhir dari kami soal sistem digital untuk usaha Anda.
 
-${brand.hideFreeTrial ? '' : '⏰ Kesempatan coba gratis 14 hari masih terbuka — tanpa kartu kredit, tanpa komitmen.'}
+${brand.hideFreeTrial ? "" : "⏰ Kesempatan coba gratis 14 hari masih terbuka — tanpa kartu kredit, tanpa komitmen."}
 
-Fitur khusus ${category || 'usaha Anda'}: ${feature}
+Fitur khusus ${category || "usaha Anda"}: ${feature}
 
 Coba gratis (terakhir): https://pjtechumkm.com
 Chat WhatsApp: ${waLink}
@@ -443,7 +516,7 @@ Kalau nanti butuh, kami tetap di sini. Tinggal balas email ini atau chat WA.
 
 ---
 Unsubscribe permanen: ${unsubscribeUrl}
-${brand.appName} • ${brand.tagline} • ${brand.url.replace('https://', '')}
+${brand.appName} • ${brand.tagline} • ${brand.url.replace("https://", "")}
 `;
 
   return { subject, html, text, fromName: brand.appName };

@@ -1,9 +1,5 @@
-import path from 'path';
-import dotenv from 'dotenv';
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
-
-import Groq from 'groq-sdk';
-import prisma from '../lib/prisma';
+import Groq from "groq-sdk";
+import prisma from "../config/db";
 
 const groq = process.env.GROQ_API_KEY
   ? new Groq({ apiKey: process.env.GROQ_API_KEY })
@@ -36,28 +32,33 @@ async function main() {
 
   try {
     // Mode 1: Klasifikasi & Auto-Reply (--classify)
-    if (args.includes('--classify')) {
-      const queryArg = args.find((a) => a.startsWith('--query='))?.replace('--query=', '') || '';
-      const senderArg = args.find((a) => a.startsWith('--sender='))?.replace('--sender=', '') || 'Unknown';
+    if (args.includes("--classify")) {
+      const queryArg =
+        args.find((a) => a.startsWith("--query="))?.replace("--query=", "") ||
+        "";
+      const senderArg =
+        args.find((a) => a.startsWith("--sender="))?.replace("--sender=", "") ||
+        "Unknown";
 
       if (!queryArg) {
-        throw new Error('Query pesan klien tidak boleh kosong');
+        throw new Error("Query pesan klien tidak boleh kosong");
       }
 
       // Default fallback jika Groq tidak tersedia
-      let category: any = 'FEATURE_HOWTO';
-      let status: any = 'RESOLVED_BY_AI';
-      let answer = 'Halo Kak! Terima kasih sudah menghubungi CS Kasir UMKM PJTech. Ada yang bisa kami bantu seputar aplikasi kasir Anda?';
-      let escalatedReason = '';
+      let category: any = "FEATURE_HOWTO";
+      let status: any = "RESOLVED_BY_AI";
+      let answer =
+        "Halo Kak! Terima kasih sudah menghubungi CS Kasir UMKM PJTech. Ada yang bisa kami bantu seputar aplikasi kasir Anda?";
+      let escalatedReason = "";
 
       if (groq) {
         const completion = await groq.chat.completions.create({
-          model: 'qwen/qwen3.8-27b',
+          model: "qwen/qwen3.8-27b",
           temperature: 0.2,
-          response_format: { type: 'json_object' },
+          response_format: { type: "json_object" },
           messages: [
             {
-              role: 'system',
+              role: "system",
               content: `Anda adalah AI Customer Success & Technical Triage untuk aplikasi "Kasir UMKM PJTech".
 Tugas Anda adalah:
 1. Menganalisis pesan masuk dari klien.
@@ -75,30 +76,30 @@ Output format JSON:
   "status": "RESOLVED_BY_AI" | "ESCALATED_TO_HUMAN",
   "answer": "Pesan balasan ramah dalam bahasa Indonesia santun",
   "escalatedReason": "Alasan singkat jika butuh eskalasi ke Mas Pranata, atau kosong jika resolved"
-}`
+}`,
             },
             {
-              role: 'user',
-              content: queryArg
-            }
-          ]
+              role: "user",
+              content: queryArg,
+            },
+          ],
         });
 
-        const resContent = completion.choices[0]?.message?.content || '{}';
+        const resContent = completion.choices[0]?.message?.content || "{}";
         const parsed = JSON.parse(resContent);
 
-        category = parsed.category || 'FEATURE_HOWTO';
-        status = parsed.status || 'RESOLVED_BY_AI';
+        category = parsed.category || "FEATURE_HOWTO";
+        status = parsed.status || "RESOLVED_BY_AI";
         answer = parsed.answer || answer;
-        escalatedReason = parsed.escalatedReason || '';
+        escalatedReason = parsed.escalatedReason || "";
       }
 
       // Cari prospect jika ada berdasarkan sender WA
-      const cleanPhone = senderArg.replace(/\D/g, '');
+      const cleanPhone = senderArg.replace(/\D/g, "");
       const prospect = await prisma.prospect.findFirst({
         where: {
-          whatsappNumber: { contains: cleanPhone.slice(-9) }
-        }
+          whatsappNumber: { contains: cleanPhone.slice(-9) },
+        },
       });
 
       // Simpan ke database SupportTicket
@@ -110,87 +111,121 @@ Output format JSON:
           status,
           userQuery: queryArg,
           aiDraftAnswer: answer,
-          escalatedReason: status === 'ESCALATED_TO_HUMAN' ? escalatedReason || 'Butuh penanganan teknis' : null
-        }
+          escalatedReason:
+            status === "ESCALATED_TO_HUMAN"
+              ? escalatedReason || "Butuh penanganan teknis"
+              : null,
+        },
       });
 
-      console.log(JSON.stringify({
-        success: true,
-        ticketId: ticket.id,
-        senderPhone: senderArg,
-        category,
-        status,
-        requiresEscalation: status === 'ESCALATED_TO_HUMAN',
-        escalatedReason,
-        answer,
-        prospectName: prospect?.businessName || null
-      }, null, 2));
+      console.log(
+        JSON.stringify(
+          {
+            success: true,
+            ticketId: ticket.id,
+            senderPhone: senderArg,
+            category,
+            status,
+            requiresEscalation: status === "ESCALATED_TO_HUMAN",
+            escalatedReason,
+            answer,
+            prospectName: prospect?.businessName || null,
+          },
+          null,
+          2,
+        ),
+      );
       return;
     }
 
     // Mode 2: Daftar Tiket Butuh Teknisi (--list)
-    if (args.includes('--list')) {
+    if (args.includes("--list")) {
       const tickets = await prisma.supportTicket.findMany({
-        where: { status: 'ESCALATED_TO_HUMAN' },
-        orderBy: { createdAt: 'desc' },
+        where: { status: "ESCALATED_TO_HUMAN" },
+        orderBy: { createdAt: "desc" },
         take: 10,
         include: {
           prospect: {
-            select: { businessName: true, category: true, city: true }
-          }
-        }
+            select: { businessName: true, category: true, city: true },
+          },
+        },
       });
 
       const totalCount = await prisma.supportTicket.count({
-        where: { status: 'ESCALATED_TO_HUMAN' }
+        where: { status: "ESCALATED_TO_HUMAN" },
       });
 
-      console.log(JSON.stringify({
-        success: true,
-        totalEscalated: totalCount,
-        tickets
-      }, null, 2));
+      console.log(
+        JSON.stringify(
+          {
+            success: true,
+            totalEscalated: totalCount,
+            tickets,
+          },
+          null,
+          2,
+        ),
+      );
       return;
     }
 
     // Mode 3: Selesaikan Tiket (--resolve)
-    if (args.includes('--resolve')) {
-      const idArg = args.find((a) => a.startsWith('--id='))?.replace('--id=', '');
-      if (!idArg) throw new Error('ID tiket wajib diisi (--id=...)');
+    if (args.includes("--resolve")) {
+      const idArg = args
+        .find((a) => a.startsWith("--id="))
+        ?.replace("--id=", "");
+      if (!idArg) throw new Error("ID tiket wajib diisi (--id=...)");
 
       const updated = await prisma.supportTicket.update({
         where: { id: idArg },
         data: {
-          status: 'CLOSED',
-          resolvedAt: new Date()
-        }
+          status: "CLOSED",
+          resolvedAt: new Date(),
+        },
       });
 
-      console.log(JSON.stringify({
-        success: true,
-        message: 'Tiket berhasil diselesaikan (CLOSED)',
-        ticket: updated
-      }, null, 2));
+      console.log(
+        JSON.stringify(
+          {
+            success: true,
+            message: "Tiket berhasil diselesaikan (CLOSED)",
+            ticket: updated,
+          },
+          null,
+          2,
+        ),
+      );
       return;
     }
 
     // Default: Status ringkasan CS
     const [totalTickets, resolvedCount, escalatedCount] = await Promise.all([
       prisma.supportTicket.count(),
-      prisma.supportTicket.count({ where: { status: 'RESOLVED_BY_AI' } }),
-      prisma.supportTicket.count({ where: { status: 'ESCALATED_TO_HUMAN' } })
+      prisma.supportTicket.count({ where: { status: "RESOLVED_BY_AI" } }),
+      prisma.supportTicket.count({ where: { status: "ESCALATED_TO_HUMAN" } }),
     ]);
 
-    console.log(JSON.stringify({
-      success: true,
-      stats: {
-        totalTickets,
-        resolvedByAI: resolvedCount,
-        escalatedToHuman: escalatedCount
-      }
-    }, null, 2));
+    console.log(
+      JSON.stringify(
+        {
+          success: true,
+          stats: {
+            totalTickets,
+            resolvedByAI: resolvedCount,
+            escalatedToHuman: escalatedCount,
+          },
+        },
+        null,
+        2,
+      ),
+    );
   } catch (error: any) {
-    console.error(JSON.stringify({ success: false, error: error?.message || String(error) }));
+    console.error(
+      JSON.stringify({
+        success: false,
+        error: error?.message || String(error),
+      }),
+    );
     process.exit(1);
   } finally {
     await prisma.$disconnect();

@@ -1,18 +1,20 @@
-import axios from 'axios';
-import prisma from '../lib/prisma';
+import axios from "axios";
+import prisma from "../config/db";
 
-const API_VERSION = process.env.WA_API_VERSION || 'v20.0';
+const API_VERSION = process.env.WA_API_VERSION || "v20.0";
 const BASE_URL = `https://graph.facebook.com/${API_VERSION}`;
 const PHONE_NUMBER_ID = process.env.WA_PHONE_NUMBER_ID;
 const ACCESS_TOKEN = process.env.WA_CLOUD_API_TOKEN;
 
 if (!PHONE_NUMBER_ID || !ACCESS_TOKEN) {
-  console.warn('[WA Cloud API] ⚠️ WA_PHONE_NUMBER_ID or WA_CLOUD_API_TOKEN not set in .env');
+  console.warn(
+    "[WA Cloud API] ⚠️ WA_PHONE_NUMBER_ID or WA_CLOUD_API_TOKEN not set in .env",
+  );
 }
 
 const headers = {
-  'Authorization': `Bearer ${ACCESS_TOKEN}`,
-  'Content-Type': 'application/json',
+  Authorization: `Bearer ${ACCESS_TOKEN}`,
+  "Content-Type": "application/json",
 };
 
 /**
@@ -22,37 +24,44 @@ export async function sendTemplate(
   to: string,
   templateName: string,
   params: string[] = [],
-  languageCode: string = 'id'
+  languageCode: string = "id",
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
   if (!PHONE_NUMBER_ID || !ACCESS_TOKEN) {
-    return { success: false, error: 'Missing credentials' };
+    return { success: false, error: "Missing credentials" };
   }
 
   try {
     const formattedTo = formatPhoneNumber(to);
-    
-    const components = params.length > 0 ? [{
-      type: 'body',
-      parameters: params.map(p => ({ type: 'text', text: p }))
-    }] : [];
+
+    const components =
+      params.length > 0
+        ? [
+            {
+              type: "body",
+              parameters: params.map((p) => ({ type: "text", text: p })),
+            },
+          ]
+        : [];
 
     const response = await axios.post(
       `${BASE_URL}/${PHONE_NUMBER_ID}/messages`,
       {
-        messaging_product: 'whatsapp',
+        messaging_product: "whatsapp",
         to: formattedTo,
-        type: 'template',
+        type: "template",
         template: {
           name: templateName,
           language: { code: languageCode },
-          components
-        }
+          components,
+        },
       },
-      { headers, timeout: 10000 }
+      { headers, timeout: 10000 },
     );
 
     const messageId = response.data.messages?.[0]?.id;
-    console.log(`✅ [WA Cloud] Template "${templateName}" sent to ${formattedTo} (ID: ${messageId})`);
+    console.log(
+      `✅ [WA Cloud] Template "${templateName}" sent to ${formattedTo} (ID: ${messageId})`,
+    );
     return { success: true, messageId };
   } catch (error: any) {
     const errMsg = error.response?.data?.error?.message || error.message;
@@ -66,10 +75,10 @@ export async function sendTemplate(
  */
 export async function sendText(
   to: string,
-  text: string
+  text: string,
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
   if (!PHONE_NUMBER_ID || !ACCESS_TOKEN) {
-    return { success: false, error: 'Missing credentials' };
+    return { success: false, error: "Missing credentials" };
   }
 
   try {
@@ -78,12 +87,12 @@ export async function sendText(
     const response = await axios.post(
       `${BASE_URL}/${PHONE_NUMBER_ID}/messages`,
       {
-        messaging_product: 'whatsapp',
+        messaging_product: "whatsapp",
         to: formattedTo,
-        type: 'text',
-        text: { body: text }
+        type: "text",
+        text: { body: text },
       },
-      { headers, timeout: 10000 }
+      { headers, timeout: 10000 },
     );
 
     const messageId = response.data.messages?.[0]?.id;
@@ -101,36 +110,39 @@ export async function sendText(
  */
 export async function sendMedia(
   to: string,
-  mediaType: 'image' | 'document' | 'video',
+  mediaType: "image" | "document" | "video",
   mediaUrl: string,
   caption?: string,
-  filename?: string
+  filename?: string,
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
   if (!PHONE_NUMBER_ID || !ACCESS_TOKEN) {
-    return { success: false, error: 'Missing credentials' };
+    return { success: false, error: "Missing credentials" };
   }
 
   try {
     const formattedTo = formatPhoneNumber(to);
 
     const mediaPayload: any = {
-      messaging_product: 'whatsapp',
+      messaging_product: "whatsapp",
       to: formattedTo,
       type: mediaType,
-      [mediaType]: { link: mediaUrl }
+      [mediaType]: { link: mediaUrl },
     };
 
     if (caption) mediaPayload[mediaType].caption = caption;
-    if (filename && mediaType === 'document') mediaPayload[mediaType].filename = filename;
+    if (filename && mediaType === "document")
+      mediaPayload[mediaType].filename = filename;
 
     const response = await axios.post(
       `${BASE_URL}/${PHONE_NUMBER_ID}/messages`,
       mediaPayload,
-      { headers, timeout: 15000 }
+      { headers, timeout: 15000 },
     );
 
     const messageId = response.data.messages?.[0]?.id;
-    console.log(`✅ [WA Cloud] ${mediaType} sent to ${formattedTo} (ID: ${messageId})`);
+    console.log(
+      `✅ [WA Cloud] ${mediaType} sent to ${formattedTo} (ID: ${messageId})`,
+    );
     return { success: true, messageId };
   } catch (error: any) {
     const errMsg = error.response?.data?.error?.message || error.message;
@@ -149,15 +161,15 @@ export async function markAsRead(messageId: string): Promise<boolean> {
     await axios.post(
       `${BASE_URL}/${PHONE_NUMBER_ID}/messages`,
       {
-        messaging_product: 'whatsapp',
-        status: 'read',
-        message_id: messageId
+        messaging_product: "whatsapp",
+        status: "read",
+        message_id: messageId,
       },
-      { headers, timeout: 5000 }
+      { headers, timeout: 5000 },
     );
     return true;
   } catch (error: any) {
-    console.warn('[WA Cloud] Mark as read failed:', error.message);
+    console.warn("[WA Cloud] Mark as read failed:", error.message);
     return false;
   }
 }
@@ -169,13 +181,14 @@ export async function getMessageStatus(messageId: string): Promise<any> {
   if (!PHONE_NUMBER_ID || !ACCESS_TOKEN) return null;
 
   try {
-    const response = await axios.get(
-      `${BASE_URL}/${messageId}`,
-      { headers, timeout: 5000, params: { fields: 'status,timestamp' } }
-    );
+    const response = await axios.get(`${BASE_URL}/${messageId}`, {
+      headers,
+      timeout: 5000,
+      params: { fields: "status,timestamp" },
+    });
     return response.data;
   } catch (error: any) {
-    console.warn('[WA Cloud] Get status failed:', error.message);
+    console.warn("[WA Cloud] Get status failed:", error.message);
     return null;
   }
 }
@@ -186,17 +199,17 @@ export async function getMessageStatus(messageId: string): Promise<any> {
  * Output: "6285723256427"
  */
 export function formatPhoneNumber(input: string): string {
-  let cleaned = input.replace(/\D/g, ''); // Remove non-digits
-  
+  let cleaned = input.replace(/\D/g, ""); // Remove non-digits
+
   // Handle Indonesian numbers
-  if (cleaned.startsWith('0')) {
-    cleaned = '62' + cleaned.slice(1); // 0857... -> 62857...
-  } else if (cleaned.startsWith('8')) {
-    cleaned = '62' + cleaned; // 857... -> 62857...
-  } else if (!cleaned.startsWith('62')) {
-    cleaned = '62' + cleaned; // fallback
+  if (cleaned.startsWith("0")) {
+    cleaned = "62" + cleaned.slice(1); // 0857... -> 62857...
+  } else if (cleaned.startsWith("8")) {
+    cleaned = "62" + cleaned; // 857... -> 62857...
+  } else if (!cleaned.startsWith("62")) {
+    cleaned = "62" + cleaned; // fallback
   }
-  
+
   return cleaned;
 }
 
@@ -215,7 +228,7 @@ export function parseWebhookPayload(body: any): {
   }>;
   statuses: Array<{
     id: string;
-    status: 'sent' | 'delivered' | 'read' | 'failed';
+    status: "sent" | "delivered" | "read" | "failed";
     timestamp: string;
     recipient_id: string;
   }>;
@@ -264,7 +277,7 @@ export function parseWebhookPayload(body: any): {
       }
     }
   } catch (error) {
-    console.error('[WA Cloud] Parse webhook error:', error);
+    console.error("[WA Cloud] Parse webhook error:", error);
   }
 
   return { messages, statuses, contacts };
@@ -277,14 +290,14 @@ export function parseWebhookPayload(body: any): {
 export function verifyWebhookSignature(
   payload: string,
   signature: string,
-  appSecret: string
+  appSecret: string,
 ): boolean {
-  const crypto = require('crypto');
+  const crypto = require("crypto");
   const expectedSignature = crypto
-    .createHmac('sha256', appSecret)
+    .createHmac("sha256", appSecret)
     .update(payload)
-    .digest('hex');
-  
+    .digest("hex");
+
   return `sha256=${expectedSignature}` === signature;
 }
 

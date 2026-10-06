@@ -1,10 +1,5 @@
-﻿import path from "path";
-import dotenv from "dotenv";
-
-// Load .env from one-sales-man root
-dotenv.config({ path: path.resolve(__dirname, "../../.env") });
-
-import prisma from "../lib/prisma";
+﻿import { config } from "../config/env";
+import prisma from "../config/db";
 import {
   sendEmail,
   buildEmailTemplate,
@@ -13,11 +8,11 @@ import {
   getCategoryFeature,
   sanitizeBusinessName,
   generateUnsubscribeLink,
-} from "../email/resend-client";
+} from "../services/resend";
 
 // â”€â”€â”€ CONFIG â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-const DAILY_LIMIT = parseInt(process.env.EMAIL_DAILY_LIMIT || "50");
-const DELAY_MS = parseInt(process.env.EMAIL_DELAY_MS || "5000"); // 5 detik antar kirim
+const DAILY_LIMIT = config.outreach.dailyLimit;
+const DELAY_MS = config.outreach.delayMs;
 
 export async function runEmailOutreachInternal() {
   console.log("ðŸš€ Starting EMAIL OUTREACH job...");

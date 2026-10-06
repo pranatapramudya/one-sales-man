@@ -1,4 +1,5 @@
-import prisma from '@/lib/prisma';
+import prisma from "../config/db";
+import { config } from "../config/env";
 
 /**
  * Referensi: PRD.md
@@ -40,25 +41,29 @@ interface LLMResponse {
  * Modul Evaluasi: Memanggil LLM (Contoh implementasi via API endpoint standar, misal Groq/OpenAI compatible)
  */
 async function evaluateWithLLM(text: string): Promise<LLMResponse> {
-  const apiKey = process.env.LLM_API_KEY; // Bisa pakai API Key Groq atau Gemini yang OpenAI compatible
-  if (!apiKey) throw new Error("LLM_API_KEY belum diset di .env");
+  const apiKey = config.ai.groqKey; // Groq/Gemini key
+  if (!apiKey)
+    throw new Error("LLM_API_KEY / GROQ_API_KEY belum diset di .env");
 
   // Contoh menggunakan Groq API endpoint karena sangat cepat untuk agen otomatis
-  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${apiKey}`,
-      "Content-Type": "application/json"
+  const response = await fetch(
+    "https://api.groq.com/openai/v1/chat/completions",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "llama-3.1-8b-instant", // Sesuai standarisasi PRD v1.6 (menggantikan model yang decommissioned)
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: text },
+        ],
+        temperature: 0.3,
+      }),
     },
-    body: JSON.stringify({
-      model: "llama-3.1-8b-instant", // Sesuai standarisasi PRD v1.6 (menggantikan model yang decommissioned)
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: text }
-      ],
-      temperature: 0.3
-    })
-  });
+  );
 
   if (!response.ok) {
     const errorBody = await response.text();
@@ -77,11 +82,14 @@ async function evaluateWithLLM(text: string): Promise<LLMResponse> {
     const parsed = JSON.parse(content) as LLMResponse;
     return parsed;
   } catch (e) {
-    console.warn("[AGENT] Gagal parse JSON dari LLM, fallback ke raw string:", content);
+    console.warn(
+      "[AGENT] Gagal parse JSON dari LLM, fallback ke raw string:",
+      content,
+    );
     // If not JSON, but not explicitly NOT_RELEVANT, assume it's the response text
     // We'll consider it relevant if it has some substance
     if (content.length > 5 && !content.includes("NOT_RELEVANT")) {
-       return { isRelevant: true, response: content };
+      return { isRelevant: true, response: content };
     }
     return { isRelevant: false, response: null };
   }
@@ -100,7 +108,7 @@ export type AgentContext = {
 /**
  * FUNGSI UTAMA: Otak dari One-Sales-Man
  * Mengevaluasi teks, dan bertindak (Act) jika relevan, lalu logging ke Database.
- * 
+ *
  * @param text Pesan pemicu dari user (contoh isi tweet atau chat telegram)
  * @param platform Sumber pesan ('TELEGRAM')
  * @param context Objek context yang memuat ID spesifik (chatId)
@@ -108,31 +116,34 @@ export type AgentContext = {
  */
 export async function evaluateAndAct(
   text: string,
-  platform: 'TELEGRAM',
+  platform: "TELEGRAM",
   context: AgentContext,
-  isSimulation: boolean = false
+  isSimulation: boolean = false,
 ): Promise<any> {
   try {
     // 1. EVALUASI
     const evaluation = await evaluateWithLLM(text);
 
     if (!evaluation.isRelevant || !evaluation.response) {
-      console.log(`[AGENT-EVAL] Input dari ${platform} tidak relevan/diabaikan. Teks: "${text}"`);
+      console.log(
+        `[AGENT-EVAL] Input dari ${platform} tidak relevan/diabaikan. Teks: "${text}"`,
+      );
       return null; // Abaikan secara graceful
     }
 
     if (isSimulation) {
-      return { 
-        message: "SIMULASI BERHASIL - Eksekusi eksternal dilewati", 
-        llmEvaluation: evaluation 
+      return {
+        message: "SIMULASI BERHASIL - Eksekusi eksternal dilewati",
+        llmEvaluation: evaluation,
       };
     }
 
     // 2. EKSEKUSI (ACT) - Modular terpisah per platform
     let externalId: string;
 
-    if (platform === 'TELEGRAM') {
-      if (!context.chatId) throw new Error("Konteks Telegram tidak memiliki chatId.");
+    if (platform === "TELEGRAM") {
+      if (!context.chatId)
+        throw new Error("Konteks Telegram tidak memiliki chatId.");
       externalId = context.chatId;
     } else {
       throw new Error("Platform tidak didukung.");
@@ -142,30 +153,31 @@ export async function evaluateAndAct(
     // Mencatat Lead dan Interaksi sesuai schema.prisma
     const prospect = await prisma.prospect.upsert({
       where: {
-        whatsappNumber: externalId
+        whatsappNumber: externalId,
       },
       update: {
-        status: 'CONTACTED',
-        lastContactedAt: new Date()
+        status: "CONTACTED",
+        lastContactedAt: new Date(),
       },
       create: {
         whatsappNumber: externalId,
         businessName: "Unknown Lead", // Required by Prospect schema
-        status: 'CONTACTED',
-        lastContactedAt: new Date()
-      }
+        status: "CONTACTED",
+        lastContactedAt: new Date(),
+      },
     });
 
     await prisma.outreachMessage.create({
       data: {
         prospectId: prospect.id,
-        messageText: evaluation.response
-      }
+        messageText: evaluation.response,
+      },
     });
 
-    console.log(`[AGENT-SUCCESS] Eksekusi di ${platform} berhasil (Data disimpan ke DB).`);
+    console.log(
+      `[AGENT-SUCCESS] Eksekusi di ${platform} berhasil (Data disimpan ke DB).`,
+    );
     return evaluation.response;
-
   } catch (error) {
     console.error("[AGENT-ERROR] Gagal memproses evaluateAndAct:", error);
     return null; // Aplikasi tidak boleh crash karena error agen
