@@ -6,17 +6,17 @@
     "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "next start",
-    "scrape": "tsx src/pipeline/cli-scrape.ts",
-    "auto:scrape": "tsx src/pipeline/auto-scrape.ts",
-    "master": "tsx src/pipeline/master-pipeline.ts",
-    "outreach": "tsx src/pipeline/cli-outreach.ts",
-    "email:outreach": "tsx src/pipeline/cli-email-outreach.ts",
-    "email:warmup": "tsx src/pipeline/cli-email-warmup.ts",
-    "report": "tsx src/pipeline/export-report.ts",
-    "pair": "tsx src/pipeline/cli-pair.ts",
-    "cs": "tsx src/pipeline/cli-cs.ts",
-    "nightly": "tsx src/pipeline/cli-nightly-stats.ts",
-    "prepare": "husky"
+    "scrape": "tsx src/handlers/cli-scrape.ts",
+    "auto:scrape": "tsx src/handlers/auto-scrape.ts",
+    "master": "tsx src/handlers/master-pipeline.ts",
+    "outreach": "tsx src/handlers/cli-outreach.ts",
+    "email:outreach": "tsx src/handlers/cli-email-outreach.ts",
+    "report": "tsx src/handlers/export-report.ts",
+    "pair": "tsx src/handlers/cli-pair.ts",
+    "cs": "tsx src/handlers/cli-cs.ts",
+    "nightly": "tsx src/handlers/cli-nightly-stats.ts",
+    "prepare": "husky",
+    "email:followup": "tsx src/handlers/cli-email-followup.ts"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
