@@ -200,9 +200,7 @@ async function updateScrapingState(
 }
 
 // â”€â”€â”€ MAIN ORCHESTRATOR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-export async function runAutomatedScraping(
-  limitPerRun: number = 15,
-): Promise<{
+export async function runAutomatedScraping(limitPerRun: number = 15): Promise<{
   success: boolean;
   message: string;
   totalScraped?: number;
@@ -211,13 +209,27 @@ export async function runAutomatedScraping(
   const state = await getScrapingState();
 
   if (state.isRunning) {
-    console.log("â­ï¸ Scraping sudah berjalan, skip...");
-    return {
-      success: true,
-      message: "Scraping sudah berjalan, skip",
-      totalScraped: 0,
-      emailsFound: 0,
-    };
+    // Self-healing: jika lock sudah lebih dari 20 menit, anggap stale process dan reset otomatis
+    const lockAgeMs = Date.now() - new Date(state.lastRunAt).getTime();
+    if (lockAgeMs > 20 * 60 * 1000) {
+      console.warn(
+        `[AutoScrape] Stale lock terdeteksi (${Math.round(lockAgeMs / 60000)} menit lalu). Mereset lock otomatis...`,
+      );
+      await updateScrapingState({
+        isRunning: false,
+        lastError: "Stale lock auto-cleared",
+      });
+    } else {
+      console.log(
+        "[AutoScrape] Scraping sedang aktif berjalan, skip permohonan baru...",
+      );
+      return {
+        success: true,
+        message: "Scraping sedang aktif berjalan, skip",
+        totalScraped: 0,
+        emailsFound: 0,
+      };
+    }
   }
 
   await updateScrapingState({ isRunning: true, lastError: null });

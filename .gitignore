@@ -45,3 +45,6 @@ next-env.d.ts
 *.png
 *.html
 
+.wwebjs_auth_backup/
+
+email-outreach-report-*

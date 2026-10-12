@@ -13,9 +13,9 @@ function formatPhoneNumber(phone: string): string | null {
     cleaned = "62" + cleaned;
   }
 
-  if (cleaned.length < 10) return null; // Invalid length
-  // Hanya nomor HP seluler Indonesia (08... / 628...) yang mendukung WhatsApp
-  if (!cleaned.startsWith("628")) return null;
+  if (cleaned.length < 8) return null; // Invalid length
+  // Format nomor Indonesia (seluler maupun telepon bisnis)
+  if (!cleaned.startsWith("62")) return null;
   return "+" + cleaned;
 }
 
@@ -51,23 +51,37 @@ async function humanDelay(
   await new Promise((resolve) => setTimeout(resolve, delay));
 }
 
-// Extract email from business website
+// Extract email from business website (tab terisolasi agar Maps tidak tertimpa)
 async function extractEmailFromWebsite(
-  page: any,
+  mapsPage: any,
   websiteUrl: string,
 ): Promise<{ email: string | null; source: string }> {
   if (!websiteUrl) return { email: null, source: "none" };
 
+  let webPage: any = null;
   try {
-    console.log(`  Visiting website: ${websiteUrl}`);
-    await page.goto(websiteUrl, {
+    console.log(`  Visiting website in isolated tab: ${websiteUrl}`);
+    const context = mapsPage.context();
+    webPage = await context.newPage();
+
+    // Blok aset berat agar cepat dan hemat memori
+    await webPage
+      .route(
+        "**/*.{png,jpg,jpeg,gif,svg,webp,woff,woff2,css,font,media}",
+        (route: any) => route.abort(),
+      )
+      .catch(() => {});
+
+    await webPage.goto(websiteUrl, {
       waitUntil: "domcontentloaded",
-      timeout: 15000,
+      timeout: 12000,
     });
-    await humanDelay(1500, 3000);
+    await humanDelay(1000, 2000);
 
     // Get page content
-    const pageText = await page.evaluate(() => document.body.innerText);
+    const pageText = await webPage
+      .evaluate(() => document.body.innerText)
+      .catch(() => "");
     const email = extractEmailFromText(pageText);
     if (email) {
       console.log(`  Found email on website: ${email}`);
@@ -75,11 +89,13 @@ async function extractEmailFromWebsite(
     }
 
     // Check mailto links
-    const mailtoLinks = await page.evaluate(() =>
-      Array.from(document.querySelectorAll('a[href^="mailto:"]')).map((a) =>
-        a.getAttribute("href"),
-      ),
-    );
+    const mailtoLinks = await webPage
+      .evaluate(() =>
+        Array.from(document.querySelectorAll('a[href^="mailto:"]')).map((a) =>
+          a.getAttribute("href"),
+        ),
+      )
+      .catch(() => []);
     for (const href of mailtoLinks) {
       const email = extractEmailFromMailto(href || "");
       if (email) {
@@ -89,37 +105,46 @@ async function extractEmailFromWebsite(
     }
 
     // Check common contact pages
-    const contactLinks = await page.evaluate(() =>
-      Array.from(
-        document.querySelectorAll(
-          'a[href*="contact"], a[href*="hubungi"], a[href*="about"]',
-        ),
+    const contactLinks = await webPage
+      .evaluate(() =>
+        Array.from(
+          document.querySelectorAll(
+            'a[href*="contact"], a[href*="hubungi"], a[href*="about"]',
+          ),
+        )
+          .map((a) => a.getAttribute("href"))
+          .filter(
+            (h) => h && !h.startsWith("#") && !h.startsWith("javascript:"),
+          ),
       )
-        .map((a) => a.getAttribute("href"))
-        .filter((h) => h && !h.startsWith("#") && !h.startsWith("javascript:")),
-    );
+      .catch(() => []);
 
-    for (const link of contactLinks.slice(0, 3)) {
-      // Limit to 3 contact pages
+    for (const link of contactLinks.slice(0, 2)) {
       try {
         const fullUrl = new URL(link, websiteUrl).href;
-        await page.goto(fullUrl, {
+        await webPage.goto(fullUrl, {
           waitUntil: "domcontentloaded",
-          timeout: 10000,
+          timeout: 8000,
         });
-        await humanDelay(1000, 2000);
-        const contactText = await page.evaluate(() => document.body.innerText);
+        await humanDelay(800, 1500);
+        const contactText = await webPage
+          .evaluate(() => document.body.innerText)
+          .catch(() => "");
         const contactEmail = extractEmailFromText(contactText);
         if (contactEmail) {
           console.log(`  Found email on contact page: ${contactEmail}`);
           return { email: contactEmail, source: "website" };
         }
       } catch (e) {
-        // Continue to next link
+        // Continue
       }
     }
   } catch (err: any) {
     console.log(`  Website visit failed: ${err.message}`);
+  } finally {
+    if (webPage) {
+      await webPage.close().catch(() => {});
+    }
   }
 
   return { email: null, source: "none" };
@@ -184,49 +209,65 @@ async function extractEmailFromSocialMedia(
     });
 
     for (const link of socialLinks.slice(0, 2)) {
-      // Limit to 2 social links
+      let socialPage: any = null;
       try {
-        if (link.href.includes("instagram.com")) {
-          console.log(`  Checking Instagram: ${link.href}`);
-          await page.goto(link.href, {
-            waitUntil: "domcontentloaded",
-            timeout: 15000,
-          });
-          await humanDelay(2000, 4000);
+        socialPage = await page.context().newPage();
+        await socialPage
+          .route("**/*.{png,jpg,jpeg,gif,svg,webp,mp4,webm,font}", (r: any) =>
+            r.abort(),
+          )
+          .catch(() => {});
 
-          const bioText = await page.evaluate(() => {
-            // Instagram bio selectors
-            const bio =
-              document.querySelector("header section") ||
-              document.querySelector('[data-testid="user-bio"]') ||
-              document.body;
-            return (bio as HTMLElement)?.innerText || "";
+        if (link.href.includes("instagram.com")) {
+          console.log(`  Checking Instagram in isolated tab: ${link.href}`);
+          await socialPage.goto(link.href, {
+            waitUntil: "domcontentloaded",
+            timeout: 10000,
           });
+          await humanDelay(1500, 2500);
+
+          const bioText = await socialPage
+            .evaluate(() => {
+              const bio =
+                document.querySelector("header section") ||
+                document.querySelector('[data-testid="user-bio"]') ||
+                document.body;
+              return (bio as HTMLElement)?.innerText || "";
+            })
+            .catch(() => "");
 
           const email = extractEmailFromText(bioText);
           if (email) {
             console.log(`  Found email in Instagram bio: ${email}`);
+            await socialPage.close().catch(() => {});
             return { email, source: "instagram" };
           }
         }
 
         if (link.href.includes("facebook.com")) {
-          console.log(`  Checking Facebook: ${link.href}`);
-          await page.goto(link.href, {
+          console.log(`  Checking Facebook in isolated tab: ${link.href}`);
+          await socialPage.goto(link.href, {
             waitUntil: "domcontentloaded",
-            timeout: 15000,
+            timeout: 10000,
           });
-          await humanDelay(2000, 4000);
+          await humanDelay(1500, 2500);
 
-          const fbText = await page.evaluate(() => document.body.innerText);
+          const fbText = await socialPage
+            .evaluate(() => document.body.innerText)
+            .catch(() => "");
           const email = extractEmailFromText(fbText);
           if (email) {
             console.log(`  Found email on Facebook: ${email}`);
+            await socialPage.close().catch(() => {});
             return { email, source: "facebook" };
           }
         }
       } catch (e) {
         // Continue
+      } finally {
+        if (socialPage) {
+          await socialPage.close().catch(() => {});
+        }
       }
     }
   } catch (err: any) {
