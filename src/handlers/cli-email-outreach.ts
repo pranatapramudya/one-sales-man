@@ -129,7 +129,8 @@ export async function runEmailOutreachInternal() {
   }
 
   console.log("\nðŸ“Š EMAIL OUTREACH SUMMARY");
-  console.log(`âœ… Sent: ${sent}`);
+  console.log(`Sent: ${sent}`);
+  console.log(`✅ Sent: ${sent}`);
   console.log(`âŒ Failed: ${failed}`);
   console.log(`ðŸ“‹ Total processed: ${prospects.length}`);
 }
