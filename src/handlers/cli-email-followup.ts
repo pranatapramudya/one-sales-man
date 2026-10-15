@@ -196,15 +196,17 @@ async function runFollowUpOutreach() {
   console.log(`  Failed: ${failed}`);
   console.log(`  Marked done: ${doneCount.count}`);
 
-  // Send Telegram notification
-  await sendTelegramNotification(
-    `🔄 *Email Follow-up Selesai*\n` +
-      `📧 FU#1 (3 hari): ${followUp1Prospects.length} target\n` +
-      `📧 FU#2 (7 hari): ${followUp2Prospects.length} target\n` +
-      `✅ Terkirim: ${sent}\n` +
-      `❌ Gagal: ${failed}\n` +
-      `📦 Selesai (stage 3): ${doneCount.count}`,
-  );
+  // Send Telegram notification only if targets were processed
+  if (sent > 0 || failed > 0) {
+    await sendTelegramNotification(
+      `🔄 *Email Follow-up Selesai*\n` +
+        `📧 FU#1 (3 hari): ${followUp1Prospects.length} target\n` +
+        `📧 FU#2 (7 hari): ${followUp2Prospects.length} target\n` +
+        `✅ Terkirim: ${sent}\n` +
+        `❌ Gagal: ${failed}\n` +
+        `📦 Selesai (stage 3): ${doneCount.count}`,
+    );
+  }
 
   return { success: failed === 0, sent, failed, done: doneCount.count };
 }

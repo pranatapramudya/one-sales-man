@@ -29,8 +29,12 @@ function extractEmailFromText(text: string): string | null {
     (e) =>
       !e.match(/\.(png|jpg|jpeg|gif|svg|webp|ico|css|js)$/i) &&
       !e.includes("example.com") &&
-      !e.includes("google.com") &&
-      !e.includes("gstatic.com"),
+      !e.includes("google.") &&
+      !e.includes("gstatic.") &&
+      !e.includes("sentry.") &&
+      !e.includes("wixpress.") &&
+      !e.includes("schema.org") &&
+      !e.includes("aaron.burriss"),
   );
   return filtered[0] || null;
 }
@@ -39,7 +43,12 @@ function extractEmailFromText(text: string): string | null {
 function extractEmailFromMailto(href: string): string | null {
   if (!href) return null;
   const match = href.match(/mailto:([^?&]+)/);
-  return match ? match[1] : null;
+  if (!match) return null;
+  try {
+    return decodeURIComponent(match[1].trim());
+  } catch {
+    return match[1].trim();
+  }
 }
 
 // Helper to add random delay (human-like behavior)
@@ -422,7 +431,10 @@ export async function scrapeGoogleMaps(
           'a[data-item-id^="authority:"], a[href*="http"]:not([href*="google.com"]):not([href*="maps"]):not([href*="instagram"]):not([href*="facebook"]):not([href*="tiktok"]):not([href*="twitter"]):not([href*="youtube"]):not([href*="linkedin"])',
         );
         if ((await websiteBtn.count()) > 0) {
-          websiteUrl = await websiteBtn.first().getAttribute("href");
+          const href = await websiteBtn.first().getAttribute("href");
+          if (href && !href.includes("google.") && !href.includes("gstatic.")) {
+            websiteUrl = href;
+          }
         }
 
         // 5. EKSTRAK EMAIL (Multi-source)
