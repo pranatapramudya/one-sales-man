@@ -10,12 +10,12 @@ import {
   generateUnsubscribeLink,
 } from "../services/resend";
 
-// â”€â”€â”€ CONFIG â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─€─€─€ CONFIG ─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€
 const DAILY_LIMIT = config.outreach.dailyLimit;
 const DELAY_MS = config.outreach.delayMs;
 
 export async function runEmailOutreachInternal() {
-  console.log("ðŸš€ Starting EMAIL OUTREACH job...");
+  console.log("🚀 Starting EMAIL OUTREACH job...");
   console.log(`Daily limit: ${DAILY_LIMIT} emails`);
 
   // 1. Ambil prospek yang status PENDING dan PUNYA EMAIL (dari scraping)
@@ -29,12 +29,12 @@ export async function runEmailOutreachInternal() {
   });
 
   if (prospects.length === 0) {
-    console.log("âœ… Tidak ada prospek PENDING dengan email untuk dikirim.");
+    console.log("✅ Tidak ada prospek PENDING dengan email untuk dikirim.");
     return;
   }
 
   console.log(
-    `ðŸ“‹ Ditemukan ${prospects.length} prospek dengan email untuk outreach.`,
+    `📋 Ditemukan ${prospects.length} prospek dengan email untuk outreach.`,
   );
 
   // Stats by email source
@@ -46,7 +46,7 @@ export async function runEmailOutreachInternal() {
     },
     {} as Record<string, number>,
   );
-  console.log(`ðŸ“Š Email sources:`, sourceStats);
+  console.log(`📊 Email sources:`, sourceStats);
 
   let sent = 0;
   let failed = 0;
@@ -104,35 +104,35 @@ export async function runEmailOutreachInternal() {
           },
         });
         console.log(
-          `âœ… [${sent}/${prospects.length}] Email sent to ${prospect.businessName} (${emailTo}) [src: ${prospect.emailSource}]`,
+          `✅ [${sent}/${prospects.length}] Email sent to ${prospect.businessName} (${emailTo}) [src: ${prospect.emailSource}]`,
         );
       } else {
         failed++;
         console.error(
-          `âŒ Failed to send to ${prospect.businessName} (${emailTo}): ${result.error}`,
+          `❌ Failed to send to ${prospect.businessName} (${emailTo}): ${result.error}`,
         );
       }
 
       // Delay antar kirim (randomized untuk anti-detection)
       if (i < prospects.length - 1) {
         const delay = Math.random() * 3000 + DELAY_MS; // 5-8 detik random
-        console.log(`â³ Waiting ${Math.round(delay / 1000)}s...`);
+        console.log(`⏳ Waiting ${Math.round(delay / 1000)}s...`);
         await new Promise((r) => setTimeout(r, delay));
       }
     } catch (err: any) {
       failed++;
       console.error(
-        `âŒ Error processing ${prospect.businessName}:`,
+        `❌ Error processing ${prospect.businessName}:`,
         err.message,
       );
     }
   }
 
-  console.log("\nðŸ“Š EMAIL OUTREACH SUMMARY");
+  console.log("\n📊 EMAIL OUTREACH SUMMARY");
   console.log(`Sent: ${sent}`);
   console.log(`✅ Sent: ${sent}`);
-  console.log(`âŒ Failed: ${failed}`);
-  console.log(`ðŸ“‹ Total processed: ${prospects.length}`);
+  console.log(`❌ Failed: ${failed}`);
+  console.log(`📋 Total processed: ${prospects.length}`);
 }
 
 // Follow-up scheduler

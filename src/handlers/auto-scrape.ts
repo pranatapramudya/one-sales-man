@@ -2,7 +2,7 @@
 import prisma from "../config/db";
 import { sendTelegramNotification } from "../services/telegram"; // akan dibuat
 
-// â”€â”€â”€ KONFIGURASI VERTIKAL & PRIORITAS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─€─€─€ KONFIGURASI VERTIKAL & PRIORITAS ─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€
 interface VerticalConfig {
   keyword: string;
   category: string;
@@ -70,7 +70,7 @@ const VERTICALS: VerticalConfig[] = [
   { keyword: "toko kamera", category: "RETAIL", priority: 6, cities: [] },
 ];
 
-// â”€â”€â”€ EKSPANSI GEOGRAFIS (DARI SUMEDANG KE SELURUH INDONESIA) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─€─€─€ EKSPANSI GEOGRAFIS (DARI SUMEDANG KE SELURUH INDONESIA) ─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€
 const CITY_EXPANSION_WAVES = {
   // Wave 1: Sumedang & sekitar (radius ~50km) - MINGGU 1-2
   wave1: [
@@ -162,7 +162,7 @@ function getCitiesForWave(wave: number): string[] {
   ];
 }
 
-// â”€â”€â”€ STATE MANAGEMENT (persist ke DB) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─€─€─€ STATE MANAGEMENT (persist ke DB) ─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€
 async function getScrapingState() {
   let state = await prisma.scrapingState.findFirst();
   if (!state) {
@@ -199,7 +199,7 @@ async function updateScrapingState(
   });
 }
 
-// â”€â”€â”€ MAIN ORCHESTRATOR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─€─€─€ MAIN ORCHESTRATOR ─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€
 export async function runAutomatedScraping(limitPerRun: number = 15): Promise<{
   success: boolean;
   message: string;
@@ -210,7 +210,8 @@ export async function runAutomatedScraping(limitPerRun: number = 15): Promise<{
 
   if (state.isRunning) {
     // Self-healing: jika lock sudah lebih dari 20 menit, anggap stale process dan reset otomatis
-    const lockAgeMs = Date.now() - new Date(state.lastRunAt).getTime();
+    const lockAgeMs =
+      Date.now() - (state.lastRunAt ? new Date(state.lastRunAt).getTime() : 0);
     if (lockAgeMs > 20 * 60 * 1000) {
       console.warn(
         `[AutoScrape] Stale lock terdeteksi (${Math.round(lockAgeMs / 60000)} menit lalu). Mereset lock otomatis...`,
@@ -246,7 +247,7 @@ export async function runAutomatedScraping(limitPerRun: number = 15): Promise<{
     let emailsThisRun = 0;
 
     console.log(
-      `ðŸ¤– AUTO SCRAPE START | Wave: ${state.currentWave} | Vertical: ${verticals[verticalIdx]?.keyword} | City: ${cities[cityIdx]}`,
+      `🤖 AUTO SCRAPE START | Wave: ${state.currentWave} | Vertical: ${verticals[verticalIdx]?.keyword} | City: ${cities[cityIdx]}`,
     );
 
     // Loop: coba vertical & city saat ini, kalau habis lanjut ke berikutnya
@@ -258,7 +259,7 @@ export async function runAutomatedScraping(limitPerRun: number = 15): Promise<{
         const keyword = `${vertical.keyword} ${city}`;
 
         console.log(
-          `ðŸ” Scraping: "${keyword}" (${totalThisRun + 1}/${limitPerRun})`,
+          `🔍 Scraping: "${keyword}" (${totalThisRun + 1}/${limitPerRun})`,
         );
 
         try {
@@ -281,7 +282,7 @@ export async function runAutomatedScraping(limitPerRun: number = 15): Promise<{
           emailsThisRun += emailCount;
 
           console.log(
-            `  âœ… ${newCount} prospek baru, ${emailCount} punya email`,
+            `  ✅ ${newCount} prospek baru, ${emailCount} punya email`,
           );
 
           // Update state
@@ -290,7 +291,7 @@ export async function runAutomatedScraping(limitPerRun: number = 15): Promise<{
             totalEmailsFound: state.totalEmailsFound + emailCount,
           });
         } catch (err: any) {
-          console.error(`  âŒ Error scraping ${keyword}:`, err.message);
+          console.error(`  ❌ Error scraping ${keyword}:`, err.message);
           await updateScrapingState({
             lastError: `${keyword}: ${err.message}`,
           });
@@ -320,20 +321,20 @@ export async function runAutomatedScraping(limitPerRun: number = 15): Promise<{
             currentCityIndex: 0,
           });
           console.log(
-            `ðŸŒŠ NAIK WAVE ${nextWave}! Kota baru: ${getCitiesForWave(nextWave).length} kota`,
+            `🌊 NAIK WAVE ${nextWave}! Kota baru: ${getCitiesForWave(nextWave).length} kota`,
           );
           await sendTelegramNotification(
-            `ðŸŒŠ *Wave ${nextWave} Started!*\n${getCitiesForWave(nextWave).length} kota aktif\nTotal prospek: ${state.totalScraped + totalThisRun}`,
+            `🌊 *Wave ${nextWave} Started!*\n${getCitiesForWave(nextWave).length} kota aktif\nTotal prospek: ${state.totalScraped + totalThisRun}`,
           );
         } else {
-          console.log("ðŸŽ‰ SEMUA WAVE SELESAI! Restart dari wave 1...");
+          console.log("🎉 SEMUA WAVE SELESAI! Restart dari wave 1...");
           await updateScrapingState({
             currentWave: 1,
             currentVerticalIndex: 0,
             currentCityIndex: 0,
           });
           await sendTelegramNotification(
-            `ðŸ”„ *Full Cycle Complete!*\nRestart dari Wave 1 (Sumedang)\nTotal lifetime: ${state.totalScraped + totalThisRun} prospek`,
+            `🔄 *Full Cycle Complete!*\nRestart dari Wave 1 (Sumedang)\nTotal lifetime: ${state.totalScraped + totalThisRun} prospek`,
           );
         }
         break;
@@ -341,7 +342,7 @@ export async function runAutomatedScraping(limitPerRun: number = 15): Promise<{
     }
 
     // Summary
-    console.log(`\nðŸ“Š RUN SUMMARY:`);
+    console.log(`\n📊 RUN SUMMARY:`);
     console.log(`  Prospek baru: ${totalThisRun}`);
     console.log(`  Email ditemukan: ${emailsThisRun}`);
     console.log(
@@ -355,8 +356,8 @@ export async function runAutomatedScraping(limitPerRun: number = 15): Promise<{
       emailsFound: emailsThisRun,
     };
   } catch (err: any) {
-    console.error("âŒ Fatal error:", err);
-    await sendTelegramNotification(`âŒ *Auto Scrape Error*\n${err.message}`);
+    console.error("❌ Fatal error:", err);
+    await sendTelegramNotification(`❌ *Auto Scrape Error*\n${err.message}`);
     await updateScrapingState({ lastError: err.message });
     return {
       success: false,
@@ -369,7 +370,7 @@ export async function runAutomatedScraping(limitPerRun: number = 15): Promise<{
   }
 }
 
-// â”€â”€â”€ CLI ENTRY â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─€─€─€ CLI ENTRY ─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€
 async function main() {
   const args = process.argv.slice(2);
   let limit = 15;

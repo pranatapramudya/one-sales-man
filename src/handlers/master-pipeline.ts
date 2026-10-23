@@ -7,39 +7,39 @@ import {
 } from "../services/telegram";
 import prisma from "../config/db";
 
-// â”€â”€â”€ MASTER ORCHESTRATOR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─€─€─€ MASTER ORCHESTRATOR ─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€
 export async function runFullPipeline() {
   const startTime = Date.now();
-  console.log("ðŸš€ ===== MASTER PIPELINE STARTED =====");
+  console.log("🚀 ===== MASTER PIPELINE STARTED =====");
 
   await sendTelegramNotification(
-    `ðŸš€ *Master Pipeline Started*\n` +
+    `🚀 *Master Pipeline Started*\n` +
       `Time: ${new Date().toLocaleString("id-ID")}\n` +
-      `Mode: FULL AUTO (Scrape â†’ Email â†’ Report)`,
+      `Mode: FULL AUTO (Scrape → Email → Report)`,
   );
 
   try {
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€
     // PHASE 1: AUTO SCRAPE (15 prospek per run)
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    console.log("\nðŸ“ PHASE 1: AUTO SCRAPING");
-    await sendTelegramNotification(`ðŸ“ *Phase 1/3: Auto Scraping...*`);
+    // ─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€
+    console.log("\n📍 PHASE 1: AUTO SCRAPING");
+    await sendTelegramNotification(`📍 *Phase 1/3: Auto Scraping...*`);
 
     await runAutomatedScraping(15);
 
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€
     // PHASE 2: EMAIL OUTREACH (kirim ke yang punya email)
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    console.log("\nðŸ“ PHASE 2: EMAIL OUTREACH");
-    await sendTelegramNotification(`ðŸ“ *Phase 2/3: Email Outreach...*`);
+    // ─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€
+    console.log("\n📍 PHASE 2: EMAIL OUTREACH");
+    await sendTelegramNotification(`📍 *Phase 2/3: Email Outreach...*`);
 
     await runEmailOutreachFn();
 
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€
     // PHASE 3: GENERATE REPORT & SEND VIA TELEGRAM
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    console.log("\nðŸ“ PHASE 3: GENERATE REPORT");
-    await sendTelegramNotification(`ðŸ“ *Phase 3/3: Generating Report...*`);
+    // ─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€
+    console.log("\n📍 PHASE 3: GENERATE REPORT");
+    await sendTelegramNotification(`📍 *Phase 3/3: Generating Report...*`);
 
     const reportResult = await generateReport();
 
@@ -49,39 +49,39 @@ export async function runFullPipeline() {
       if (xlsxFile) {
         await sendTelegramDocument(
           xlsxFile,
-          `ðŸ“Š Daily Report ${new Date().toLocaleDateString("id-ID")}`,
+          `📊 Daily Report ${new Date().toLocaleDateString("id-ID")}`,
         );
       }
     }
 
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€
     // SUMMARY
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€
     const duration = Math.round((Date.now() - startTime) / 1000 / 60);
 
     const summary = `
-âœ… *MASTER PIPELINE COMPLETE*
-â±ï¸ Durasi: ${duration} menit
-ðŸ“… ${new Date().toLocaleString("id-ID")}
+✅ *MASTER PIPELINE COMPLETE*
+⏱️ Durasi: ${duration} menit
+📍… ${new Date().toLocaleString("id-ID")}
 
-ðŸ“Š Stats akan terlihat di file Excel yang dikirim.
+📊 Stats akan terlihat di file Excel yang dikirim.
     `.trim();
 
-    console.log("\nâœ… ===== MASTER PIPELINE COMPLETE =====");
+    console.log("\n✅ ===== MASTER PIPELINE COMPLETE =====");
     console.log(summary);
 
     await sendTelegramNotification(summary);
   } catch (err: any) {
-    console.error("âŒ Master pipeline error:", err);
+    console.error("❌ Master pipeline error:", err);
     await sendTelegramNotification(
-      `âŒ *Master Pipeline FAILED*\n${err.message}`,
+      `❌ *Master Pipeline FAILED*\n${err.message}`,
     );
   } finally {
     await prisma.$disconnect();
   }
 }
 
-// â”€â”€â”€ SCHEDULER (Jalankan via cron atau Windows Task Scheduler) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─€─€─€ SCHEDULER (Jalankan via cron atau Windows Task Scheduler) ─€─€─€─€─€─€─€─€─€─€─€─€─€─€─€
 // Schedule yang direkomendasikan:
 // - Auto Scrape: Setiap 2 jam (08:00, 10:00, 12:00, 14:00, 16:00, 18:00)
 // - Email Outreach: Setiap hari jam 10:00 (setelah scrape pagi)
@@ -89,7 +89,7 @@ export async function runFullPipeline() {
 // - Report Only: Setiap hari jam 20:00 (recap harian)
 
 async function runScheduler() {
-  console.log("â° Scheduler started. Press Ctrl+C to stop.");
+  console.log("⏰ Scheduler started. Press Ctrl+C to stop.");
 
   // TIDAK jalanin full pipeline langsung pas start (mencegah notif dobel pas boot)
   // Full pipeline hanya jalan via jadwal atau manual CLI

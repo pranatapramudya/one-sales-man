@@ -32,11 +32,64 @@ export interface SendEmailParams {
   fromName?: string;
 }
 
+export function isValidOutreachEmail(email: string): boolean {
+  if (!email || typeof email !== "string") return false;
+  const trimmed = email.trim().toLowerCase();
+
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,24}$/;
+  if (!emailRegex.test(trimmed)) return false;
+
+  if (/\.(png|jpg|jpeg|gif|svg|webp|ico|css|js|woff|woff2|ttf)$/i.test(trimmed))
+    return false;
+
+  const blockedDomains = [
+    "example.com",
+    "test.com",
+    "domain.com",
+    "schema.org",
+    "wixpress.com",
+    "sentry.io",
+    "google.com",
+    "gstatic.com",
+  ];
+  if (
+    blockedDomains.some(
+      (d) => trimmed.endsWith("@" + d) || trimmed.endsWith("." + d),
+    )
+  )
+    return false;
+
+  const parts = trimmed.split("@");
+  if (parts.length !== 2) return false;
+  const tld = parts[1].split(".").pop() || "";
+  const invalidTlds = [
+    "sol",
+    "iraq",
+    "interna",
+    "sevva",
+    "ibrahim",
+    "local",
+    "invalid",
+  ];
+  if (invalidTlds.includes(tld)) return false;
+
+  return true;
+}
+
 export async function sendEmail(
   params: SendEmailParams,
 ): Promise<{ success: boolean; id?: string; error?: string }> {
   try {
     const resend = getResend();
+    if (!isValidOutreachEmail(params.to)) {
+      console.warn(
+        "[Resend Skip] Email tidak valid atau TLD sampah: " + params.to,
+      );
+      return {
+        success: false,
+        error: "Invalid email format or domain: " + params.to,
+      };
+    }
 
     // Parse base email from env, fallback if missing
     let baseEmail = "prana@pjtechumkm.com";
