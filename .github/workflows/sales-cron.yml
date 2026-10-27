@@ -15,10 +15,12 @@ jobs:
     timeout-minutes: 30
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DIRECT_URL: ${{ secrets.DIRECT_URL || secrets.DATABASE_URL }}
       RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      RESEND_FROM_EMAIL: ${{ secrets.RESEND_FROM_EMAIL || 'prana@pjtechumkm.com' }}
       EMAIL_DAILY_LIMIT: "50"
       EMAIL_DELAY_MS: "5000"
-      NODE_ENV: "production"
+      HUSKY: "0"
 
     steps:
       - name: Checkout repository
@@ -27,16 +29,18 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --include=dev
 
       - name: Generate Prisma Client
         run: npx prisma generate
 
       - name: Run Email Outreach Pipeline
+        env:
+          NODE_ENV: production
         run: npx tsx src/pipeline/cli-email-outreach.ts
 
       - name: Upload logs on failure
